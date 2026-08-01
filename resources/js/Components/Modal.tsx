@@ -1,3 +1,4 @@
+import { type PropsWithChildren } from 'react';
 import {
     Dialog,
     DialogPanel,
@@ -11,7 +12,12 @@ export default function Modal({
     maxWidth = '2xl',
     closeable = true,
     onClose = () => {},
-}) {
+}: PropsWithChildren<{
+    show: boolean;
+    maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+    closeable?: boolean;
+    onClose: () => void;
+}>) {
     const close = () => {
         if (closeable) {
             onClose();

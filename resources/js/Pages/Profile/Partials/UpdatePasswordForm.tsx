@@ -4,11 +4,15 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import { Transition } from '@headlessui/react';
 import { useForm } from '@inertiajs/react';
-import { useRef } from 'react';
+import { type FormEvent, useRef } from 'react';
 
-export default function UpdatePasswordForm({ className = '' }) {
-    const passwordInput = useRef();
-    const currentPasswordInput = useRef();
+export default function UpdatePasswordForm({
+    className = '',
+}: {
+    className?: string;
+}) {
+    const passwordInput = useRef<{ focus: () => void }>(null);
+    const currentPasswordInput = useRef<{ focus: () => void }>(null);
 
     const {
         data,
@@ -24,7 +28,7 @@ export default function UpdatePasswordForm({ className = '' }) {
         password_confirmation: '',
     });
 
-    const updatePassword = (e) => {
+    const updatePassword = (e: FormEvent) => {
         e.preventDefault();
 
         put(route('password.update'), {
@@ -33,12 +37,12 @@ export default function UpdatePasswordForm({ className = '' }) {
             onError: (errors) => {
                 if (errors.password) {
                     reset('password', 'password_confirmation');
-                    passwordInput.current.focus();
+                    passwordInput.current?.focus();
                 }
 
                 if (errors.current_password) {
                     reset('current_password');
-                    currentPasswordInput.current.focus();
+                    currentPasswordInput.current?.focus();
                 }
             },
         });
