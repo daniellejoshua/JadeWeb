@@ -1,5 +1,13 @@
 <?php
 
+// static function in a class = machine that uses the blueprint (class)
+// methods = function in the class 
+// instance = the produced object that produces a new class 
+// not every method produces an object. Only the factory method (or new keyword) does
+
+
+
+
 namespace App\Auth;
 
 use App\Models\SupabaseUser;
