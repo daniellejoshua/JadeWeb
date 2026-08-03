@@ -63,6 +63,10 @@ class SupabaseGuard implements StatefulGuard
         return $this->attempt($credentials);
     }
 
+   public function viaRemember(): bool
+    {
+        return false;
+    }
 
 
     #[Override]
@@ -101,9 +105,52 @@ class SupabaseGuard implements StatefulGuard
 
  }
 
+ #[Override]
+ public function logout()
+ {
+    $session = $this->session->get($this->sessionKey);
+
+    if (is_array($session) && isset($session['accessToken'])){
+        try{
+            $this->supabase->signOut($session['accessToken']);
+        }catch(RuntimeException){
+
+        }
+        
+    }
+ }
+
+ #[Override]
+ public function validate(array $credentials = []): bool
+ {
+    try{
+        $this->supabase->signIn($credentials['email'],$credentials['password']);
+        return true;
+    }catch(RuntimeException){
+        return false;
+    }
+ }
+
+
+
+
 
  public function refreshTokenIfNeeded(){
+    $user = $this->user;
 
+    if($this->loggedOut || ! $user instanceof SupabaseUser || ! $user->tokenNeedsRefresh()){
+        return;
+
+    }
+    try{
+        $tokens  = $this->supabase->refreshToken($this->user->refreshToken);
+    }catch(RuntimeException){
+        $this->logout();
+        return;
+    }
+    $this->storeTokens($tokens);
+    $this->user = SupabaseUser::fromTokens($tokens);
+    
  }
 
 
