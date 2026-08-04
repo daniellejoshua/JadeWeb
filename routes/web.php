@@ -1,14 +1,15 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
-    return redirect(auth()->check() ? '/dashboard' : '/login');
+    return redirect(Auth::check() ? '/dashboard' : '/login');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+Route::middleware('auth')->group(function (){
+    Route::get('/dashboard', fn ()=> Inertia::render('Dashboard'))->name('dashboard');
 });
 
 require __DIR__.'/auth.php';

@@ -2,9 +2,9 @@ import { PageProps as InertiaPageProps } from '@inertiajs/core';
 
 interface User {
     id: number;
-    name: string;
     email: string;
-    email_verified_at: string | null;
+    name: string | null;
+    user_metadata: Record<string | unknown>;
 }
 
 declare module '@inertiajs/core' {
