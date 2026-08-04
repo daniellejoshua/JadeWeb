@@ -180,4 +180,3 @@ class SupabaseGuard implements StatefulGuard
         throw new BadMethodCallException('NOT SUPPORTED BY SUPABASE GUARD ');
     }
 }
-
