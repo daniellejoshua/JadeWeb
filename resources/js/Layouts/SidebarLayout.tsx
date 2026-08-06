@@ -17,7 +17,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { initials } from '@/lib/format';
 import AppSidebar from '@/Layouts/AppSidebar';
 import SyncBadge from '@/components/dashboard/SyncBadge';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Bell, Search } from 'lucide-react';
 import { useState, type PropsWithChildren, type ReactNode } from 'react';
 import { route } from 'ziggy-js';
@@ -127,7 +127,6 @@ function SidebarLayout({ title, subtitle, dateRange, children }: SidebarLayoutPr
             defaultOpen={defaultOpen}
             style={{ '--sidebar-width': '15.625rem' } as React.CSSProperties}
         >
-            <Head title={title} />
             <AppSidebar />
             <SidebarInset>
                 <TopNav title={title} subtitle={subtitle} dateRange={dateRange} />

@@ -1,4 +1,5 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
+import { usePage } from '@inertiajs/react';
 import AiAssistantCard from '@/components/dashboard/AiAssistantCard';
 import InventoryDonut from '@/components/dashboard/InventoryDonut';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
@@ -27,6 +28,8 @@ import { Banknote, Boxes, ShoppingBag, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 function Dashboard() {
+    const user = usePage().props.auth.user;
+
     const [period, setPeriod] = useState<PeriodKey>('last30');
 
     const revenue = revenueInRange(period);
@@ -64,7 +67,7 @@ function Dashboard() {
     return (
         <SidebarLayout
             title="Dashboard"
-            subtitle="Welcome back — here's what's happening at Jade Clinic today"
+            subtitle={`Welcome back${user?.name ? `, ${user.name}` : ''}`}
             dateRange={dateRange}
         >
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
