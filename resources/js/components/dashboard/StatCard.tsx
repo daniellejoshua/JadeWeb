@@ -1,11 +1,7 @@
 import DashboardCard from '@/components/dashboard/DashboardCard';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
 type StatCardProps = {
@@ -18,9 +14,15 @@ type StatCardProps = {
 };
 
 function StatCard({ label, value, sub, icon: Icon, iconClassName, tooltip }: StatCardProps) {
+    const [showFull, setShowFull] = useState(false);
+    useEffect(() => {
+        setShowFull(false);
+    }, [value]);
+    const display = tooltip && showFull ? tooltip : value;
+
     const valueNode = (
         <span className="break-words text-2xl font-semibold leading-snug tracking-tight tabular-nums min-[480px]:text-lg min-[1536px]:text-xl">
-            {value}
+            {display}
         </span>
     );
 
@@ -30,14 +32,14 @@ function StatCard({ label, value, sub, icon: Icon, iconClassName, tooltip }: Sta
                 <div className="flex min-w-0 flex-col gap-1">
                     <span className="text-sm text-muted-foreground">{label}</span>
                     {tooltip ? (
-                        <Tooltip>
-                            <TooltipTrigger asChild className="cursor-help justify-start text-left">
-                                {valueNode}
-                            </TooltipTrigger>
-                            <TooltipContent side="top" sideOffset={4}>
-                                {tooltip}
-                            </TooltipContent>
-                        </Tooltip>
+                        <button
+                            type="button"
+                            onClick={() => setShowFull((full) => !full)}
+                            className="cursor-pointer justify-start text-left"
+                            title={showFull ? 'Show compact value' : 'Click for exact value'}
+                        >
+                            {valueNode}
+                        </button>
                     ) : (
                         valueNode
                     )}
