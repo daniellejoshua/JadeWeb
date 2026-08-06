@@ -3,24 +3,19 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Toaster } from '@/components/ui/sonner';
-import { initials } from '@/lib/format';
 import AppSidebar from '@/Layouts/AppSidebar';
 import SyncBadge from '@/components/dashboard/SyncBadge';
-import { Link, usePage } from '@inertiajs/react';
 import { Bell, Search } from 'lucide-react';
 import { useState, type PropsWithChildren, type ReactNode } from 'react';
-import { route } from 'ziggy-js';
 
 function getCookie(name: string): string | undefined {
     const match = document.cookie.match(
@@ -36,8 +31,6 @@ type SidebarLayoutProps = PropsWithChildren<{
 }>;
 
 function TopNav({ title, subtitle, dateRange }: Omit<SidebarLayoutProps, 'children'>) {
-    const user = usePage().props.auth.user;
-
     return (
         <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex min-w-0 items-center gap-3">
@@ -75,40 +68,6 @@ function TopNav({ title, subtitle, dateRange }: Omit<SidebarLayoutProps, 'childr
                         <div className="px-2 py-6 text-center text-sm text-muted-foreground">
                             No new notifications
                         </div>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-2 rounded-full p-1 outline-none transition-colors hover:bg-muted">
-                            <Avatar>
-                                <AvatarFallback className="bg-gold text-gold-foreground">
-                                    {initials(user?.name ?? user?.email)}
-                                </AvatarFallback>
-                            </Avatar>
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuLabel>
-                            <div className="flex flex-col">
-                                <span className="font-medium">{user?.name ?? 'Clinic User'}</span>
-                                <span className="text-xs font-normal text-muted-foreground">
-                                    {user?.email}
-                                </span>
-                            </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link href={route('settings')}>Settings</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            asChild
-                            className="text-destructive focus:text-destructive"
-                        >
-                            <Link href={route('logout')} method="post" as="button">
-                                Log Out
-                            </Link>
-                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

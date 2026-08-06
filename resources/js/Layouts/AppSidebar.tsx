@@ -9,7 +9,6 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarSeparator,
     useSidebar,
 } from '@/components/ui/sidebar';
 import {
@@ -17,7 +16,26 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Link } from '@inertiajs/react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { initials } from '@/lib/format';
+import { Link, usePage } from '@inertiajs/react';
 import {
     Boxes,
     LayoutDashboard,
@@ -29,6 +47,7 @@ import {
     Truck,
     Users,
 } from 'lucide-react';
+import { useState } from 'react';
 import { route } from 'ziggy-js';
 
 const navGroups = [
@@ -56,6 +75,8 @@ const navGroups = [
 
 function AppSidebar() {
     const { toggleSidebar } = useSidebar();
+    const user = usePage().props.auth.user;
+    const [logoutOpen, setLogoutOpen] = useState(false);
 
     return (
         <Sidebar collapsible="icon">
@@ -115,27 +136,91 @@ function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild tooltip="Settings">
-                            <Link href={route('settings')}>
-                                <Settings />
-                                <span>Settings</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarSeparator />
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            asChild
-                            tooltip="Log Out"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                        >
-                            <Link href={route('logout')} method="post" as="button">
-                                <LogOut />
-                                <span>Log Out</span>
-                            </Link>
-                        </SidebarMenuButton>
+                        <DropdownMenu>
+                            <SidebarMenuButton asChild size="lg" className="cursor-pointer">
+                                <DropdownMenuTrigger asChild>
+                                    <button type="button" className="w-full text-left">
+                                        <Avatar className="size-8 shrink-0">
+                                            <AvatarFallback className="bg-gold text-gold-foreground">
+                                                {initials(user?.name ?? user?.email)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex min-w-0 flex-1 flex-col leading-tight group-data-[collapsible=icon]:hidden">
+                                            <span className="truncate text-sm font-medium">
+                                                {user?.name ?? 'Clinic User'}
+                                            </span>
+                                            <span className="truncate text-xs text-muted-foreground">
+                                                {user?.email}
+                                            </span>
+                                        </div>
+                                    </button>
+                                </DropdownMenuTrigger>
+                            </SidebarMenuButton>
+                            <DropdownMenuContent align="end" side="top" sideOffset={6} className="w-64 p-1.5">
+                                <DropdownMenuLabel className="px-2.5 py-2">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="size-9 shrink-0">
+                                            <AvatarFallback className="bg-gold text-gold-foreground">
+                                                {initials(user?.name ?? user?.email)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex min-w-0 flex-col">
+                                            <span className="truncate text-sm font-medium">
+                                                {user?.name ?? 'Clinic User'}
+                                            </span>
+                                            <span className="truncate text-xs font-normal text-muted-foreground">
+                                                {user?.email}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link href={route('settings')}>
+                                        <Settings />
+                                        Settings
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => setLogoutOpen(true)}
+                                >
+                                    <LogOut />
+                                    Log Out
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </SidebarMenuItem>
                 </SidebarMenu>
+
+                <Dialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+                    <DialogContent showCloseButton={false} className="sm:max-w-sm py-6">
+                        <div className="flex flex-col items-center gap-4 text-center">
+                            <div className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                                <LogOut className="size-5" />
+                            </div>
+                            <DialogHeader className="items-center text-center">
+                                <DialogTitle>Log out of Jade Clinic?</DialogTitle>
+                                <DialogDescription>
+                                    You'll need to sign in again to access the dashboard.
+                                </DialogDescription>
+                            </DialogHeader>
+                        </div>
+                        <DialogFooter className="sm:justify-center">
+                            <Button variant="outline" onClick={() => setLogoutOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                className="bg-destructive text-white hover:bg-destructive/90"
+                                asChild
+                            >
+                                <Link href={route('logout')} method="post" as="button">
+                                    Log out
+                                </Link>
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </SidebarFooter>
         </Sidebar>
     );
