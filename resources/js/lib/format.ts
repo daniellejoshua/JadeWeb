@@ -28,6 +28,13 @@ export function formatDate(iso: string): string {
     }).format(new Date(iso));
 }
 
+export function formatShortDate(date: Date): string {
+    return new Intl.DateTimeFormat('en-PH', {
+        month: 'short',
+        day: 'numeric',
+    }).format(date);
+}
+
 export function formatDateTime(iso: string): string {
     return new Intl.DateTimeFormat('en-PH', {
         month: 'short',

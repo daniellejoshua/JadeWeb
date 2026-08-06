@@ -18,12 +18,13 @@ import {
     periodDayCount,
     periodLabels,
     periodOptions,
+    periodRange,
     products,
     revenueInRange,
     salesInRange,
     type PeriodKey,
 } from '@/data/mock';
-import { formatCompactCurrency, formatCurrency, formatNumber } from '@/lib/format';
+import { formatCompactCurrency, formatCurrency, formatNumber, formatShortDate } from '@/lib/format';
 import { Banknote, Boxes, ShoppingBag, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
@@ -41,6 +42,13 @@ function Dashboard() {
     const fullValue = (value: number) => formatCurrency(value) !== formatCompactCurrency(value)
         ? formatCurrency(value)
         : undefined;
+
+    const range = periodRange(period);
+    const revenueSub = range
+        ? range.start.toDateString() === range.end.toDateString()
+            ? formatShortDate(range.start)
+            : `${formatShortDate(range.start)} – ${formatShortDate(range.end)}`
+        : periodLabels[period];
 
     const dateRange = (
         <Select value={period} onValueChange={(value) => setPeriod(value as PeriodKey)}>
@@ -81,7 +89,7 @@ function Dashboard() {
                         <StatCard
                             label="Total Revenue"
                             value={formatCompactCurrency(revenue)}
-                            sub={periodLabels[period]}
+                            sub={revenueSub}
                             icon={Banknote}
                             tooltip={fullValue(revenue)}
                         />
