@@ -57,10 +57,10 @@ function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild size="lg">
                             <Link href={route('dashboard')}>
-                                <div className="flex size-8 items-center justify-center rounded-lg bg-jade text-jade-foreground">
+                                <div className="flex size-8 items-center justify-center rounded-lg bg-gold text-gold-foreground">
                                     <Gem className="size-4" />
                                 </div>
-                                <div className="flex flex-col leading-tight">
+                                <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
                                     <span className="font-semibold">Jade Clinic</span>
                                     <span className="text-xs text-muted-foreground">Admin Dashboard</span>
                                 </div>

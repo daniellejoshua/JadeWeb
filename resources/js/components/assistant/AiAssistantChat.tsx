@@ -71,14 +71,14 @@ function AiAssistantChat({ embedded = false }: AiAssistantChatProps) {
                 {messages.map((message) =>
                     message.role === 'user' ? (
                         <div key={message.id} className="flex justify-end">
-                            <div className="max-w-[80%] rounded-2xl rounded-br-md bg-jade px-4 py-2.5 text-sm text-jade-foreground">
+                            <div className="max-w-[80%] rounded-2xl rounded-br-md bg-gold px-4 py-2.5 text-sm text-gold-foreground">
                                 {message.content}
                             </div>
                         </div>
                     ) : (
                         <div key={message.id} className="flex items-start gap-3">
                             <Avatar className="mt-0.5">
-                                <AvatarFallback className="bg-jade text-jade-foreground">
+                                <AvatarFallback className="bg-gold text-gold-foreground">
                                     <Sparkles className="size-4" />
                                 </AvatarFallback>
                             </Avatar>
@@ -105,7 +105,7 @@ function AiAssistantChat({ embedded = false }: AiAssistantChatProps) {
                 <Button
                     type="submit"
                     size="icon"
-                    className="size-10 shrink-0 rounded-full bg-jade text-jade-foreground hover:bg-jade/90"
+                    className="size-10 shrink-0 rounded-full bg-gold text-gold-foreground hover:bg-gold/90"
                     disabled={!input.trim() || isTyping}
                 >
                     <Send className="size-4" />

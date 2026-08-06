@@ -15,13 +15,13 @@ import { inventoryStatus } from '@/data/mock';
 import { Cell, Pie, PieChart } from 'recharts';
 
 const chartConfig = {
-    inStock: { label: 'In Stock', color: 'var(--jade)' },
+    inStock: { label: 'In Stock', color: 'oklch(0.723 0.219 149.579)' },
     lowStock: { label: 'Low Stock', color: 'oklch(0.795 0.184 86.047)' },
     outOfStock: { label: 'Out of Stock', color: 'var(--destructive)' },
 } satisfies ChartConfig;
 
 const data = [
-    { name: 'inStock', label: 'In Stock', value: inventoryStatus.inStock, color: 'var(--jade)' },
+    { name: 'inStock', label: 'In Stock', value: inventoryStatus.inStock, color: 'oklch(0.723 0.219 149.579)' },
     { name: 'lowStock', label: 'Low Stock', value: inventoryStatus.lowStock, color: 'oklch(0.795 0.184 86.047)' },
     { name: 'outOfStock', label: 'Out of Stock', value: inventoryStatus.outOfStock, color: 'var(--destructive)' },
 ];

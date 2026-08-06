@@ -17,12 +17,14 @@ function StatCard({ label, value, sub, icon: Icon, iconClassName }: StatCardProp
             <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
                     <span className="text-sm text-muted-foreground">{label}</span>
-                    <span className="truncate text-2xl font-semibold tracking-tight">{value}</span>
+                    <span className="break-words text-2xl font-semibold leading-snug tracking-tight tabular-nums min-[480px]:text-lg min-[1536px]:text-xl">
+                        {value}
+                    </span>
                     {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
                 </div>
                 <div
                     className={cn(
-                        'flex size-10 shrink-0 items-center justify-center rounded-xl bg-jade-soft text-jade',
+                        'flex size-10 shrink-0 items-center justify-center rounded-xl bg-gold-soft text-gold-strong',
                         iconClassName,
                     )}
                 >

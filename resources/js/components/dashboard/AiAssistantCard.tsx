@@ -18,15 +18,15 @@ function AiAssistantCard() {
                 className="absolute right-4 top-4 gap-1.5 rounded-full border-border/60 font-normal text-muted-foreground"
             >
                 <span className="relative flex size-2">
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-jade opacity-60" />
-                    <span className="relative inline-flex size-2 rounded-full bg-jade" />
+                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-gold opacity-60" />
+                    <span className="relative inline-flex size-2 rounded-full bg-gold" />
                 </span>
                 Online
             </Badge>
 
             {!chatOpen ? (
                 <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-                    <div className="flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-jade/30 to-jade/10 text-jade">
+                    <div className="flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-gold/30 to-gold/10 text-gold-strong">
                         <Sparkles className="size-8" />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -38,7 +38,7 @@ function AiAssistantCard() {
                     </div>
                     <div className="mt-1 flex flex-col items-center gap-2">
                         <Button
-                            className="h-10 rounded-full bg-jade px-6 text-jade-foreground hover:bg-jade/90"
+                            className="h-10 rounded-full bg-gold px-6 text-gold-foreground hover:bg-gold/90"
                             onClick={() => setChatOpen(true)}
                         >
                             <Sparkles className="size-4" />
@@ -57,7 +57,7 @@ function AiAssistantCard() {
                 <CardContent className="flex flex-col gap-3 pt-6">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                            <div className="flex size-8 items-center justify-center rounded-xl bg-jade-soft text-jade">
+                            <div className="flex size-8 items-center justify-center rounded-xl bg-gold-soft text-gold-strong">
                                 <Sparkles className="size-4" />
                             </div>
                             <div className="flex flex-col leading-tight">
@@ -68,7 +68,7 @@ function AiAssistantCard() {
                         <div className="flex items-center gap-2">
                             <Link
                                 href={route('assistant')}
-                                className="inline-flex items-center gap-1 text-xs font-medium text-jade hover:underline"
+                                className="inline-flex items-center gap-1 text-xs font-medium text-gold-strong hover:underline"
                             >
                                 Full view
                                 <ArrowUpRight className="size-3.5" />

@@ -8,7 +8,7 @@ import { formatDateTime } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
 const typeStyles: Record<string, string> = {
-    IN: 'bg-jade-soft text-jade',
+    IN: 'bg-gold-soft text-gold-strong',
     OUT: 'bg-destructive/10 text-destructive',
     ADJUST: 'bg-amber-100 text-amber-700',
 };

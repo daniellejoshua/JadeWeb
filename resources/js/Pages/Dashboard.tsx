@@ -14,35 +14,40 @@ import {
 import {
     grossMargin,
     inventoryValue,
+    periodDayCount,
+    periodLabels,
+    periodOptions,
     products,
     revenueInRange,
     salesInRange,
+    type PeriodKey,
 } from '@/data/mock';
-import { formatCurrency, formatNumber } from '@/lib/format';
+import { formatCompactCurrency, formatCurrency, formatNumber } from '@/lib/format';
 import { Banknote, Boxes, ShoppingBag, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
-const rangeOptions = [
-    { value: 7, label: 'Last 7 days' },
-    { value: 14, label: 'Last 14 days' },
-    { value: 30, label: 'Last 30 days' },
-    { value: 90, label: 'Last 90 days' },
-];
-
 function Dashboard() {
-    const [days, setDays] = useState(30);
+    const [period, setPeriod] = useState<PeriodKey>('last30');
 
-    const revenue = revenueInRange(30);
-    const orders = salesInRange(30).length;
+    const revenue = revenueInRange(period);
+    const orders = salesInRange(period).length;
+    const dayCount = periodDayCount(period);
 
     const dateRange = (
-        <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
-            <SelectTrigger className="h-9 w-[140px] rounded-full border-border/60 shadow-none">
+        <Select value={period} onValueChange={(value) => setPeriod(value as PeriodKey)}>
+            <SelectTrigger className="h-9 w-[150px] rounded-full border-border/60 shadow-none">
                 <SelectValue />
             </SelectTrigger>
-            <SelectContent align="end">
-                {rangeOptions.map((option) => (
-                    <SelectItem key={option.value} value={String(option.value)}>
+            <SelectContent
+                align="end"
+                side="bottom"
+                sideOffset={6}
+                position="popper"
+                collisionPadding={12}
+                className="min-w-44 rounded-2xl"
+            >
+                {periodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
                         {option.label}
                     </SelectItem>
                 ))}
@@ -58,7 +63,7 @@ function Dashboard() {
         >
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 <div className="flex flex-col gap-6 lg:col-span-3">
-                    <PerformanceChart days={days} />
+                    <PerformanceChart period={period} />
                     <TopSellingTable />
                 </div>
 
@@ -66,25 +71,25 @@ function Dashboard() {
                     <div className="grid grid-cols-1 gap-6 min-[480px]:grid-cols-2">
                         <StatCard
                             label="Total Revenue"
-                            value={formatCurrency(revenue)}
-                            sub="Last 30 days"
+                            value={formatCompactCurrency(revenue)}
+                            sub={periodLabels[period]}
                             icon={Banknote}
                         />
                         <StatCard
                             label="Total Orders"
                             value={formatNumber(orders)}
-                            sub={`${formatNumber(salesInRange(7).length)} this week`}
+                            sub={`Avg ${formatNumber(Math.round(orders / Math.max(dayCount, 1)))} per day`}
                             icon={ShoppingBag}
                         />
                         <StatCard
                             label="Gross Profit"
-                            value={formatCurrency(revenue * grossMargin)}
+                            value={formatCompactCurrency(revenue * grossMargin)}
                             sub={`${Math.round(grossMargin * 100)}% margin`}
                             icon={TrendingUp}
                         />
                         <StatCard
                             label="Inventory Value"
-                            value={formatCurrency(inventoryValue())}
+                            value={formatCompactCurrency(inventoryValue())}
                             sub={`${products.length} products`}
                             icon={Boxes}
                         />

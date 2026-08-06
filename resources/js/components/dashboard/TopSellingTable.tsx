@@ -61,7 +61,7 @@ function TopSellingTable() {
             <CardFooter className="justify-center gap-1 rounded-b-[20px] border-t bg-transparent py-4">
                 <Link
                     href={route('products')}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-jade hover:underline"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-gold-strong hover:underline"
                 >
                     View All Products
                     <ArrowUpRight className="size-4" />

@@ -19,8 +19,15 @@ import AppSidebar from '@/Layouts/AppSidebar';
 import SyncBadge from '@/components/dashboard/SyncBadge';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Bell, Search } from 'lucide-react';
-import type { PropsWithChildren, ReactNode } from 'react';
+import { useState, type PropsWithChildren, type ReactNode } from 'react';
 import { route } from 'ziggy-js';
+
+function getCookie(name: string): string | undefined {
+    const match = document.cookie.match(
+        new RegExp('(?:^|; )' + name.replace(/([.$?*|{}()[\]\\/+^])/g, '\\$1') + '=([^;]*)'),
+    );
+    return match ? decodeURIComponent(match[1]) : undefined;
+}
 
 type SidebarLayoutProps = PropsWithChildren<{
     title: string;
@@ -59,7 +66,7 @@ function TopNav({ title, subtitle, dateRange }: Omit<SidebarLayoutProps, 'childr
                     <DropdownMenuTrigger asChild>
                         <button className="relative inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                             <Bell className="size-[18px]" />
-                            <span className="absolute right-2 top-2 size-2 rounded-full bg-jade ring-2 ring-background" />
+                            <span className="absolute right-2 top-2 size-2 rounded-full bg-gold ring-2 ring-background" />
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-72">
@@ -75,7 +82,7 @@ function TopNav({ title, subtitle, dateRange }: Omit<SidebarLayoutProps, 'childr
                     <DropdownMenuTrigger asChild>
                         <button className="flex items-center gap-2 rounded-full p-1 outline-none transition-colors hover:bg-muted">
                             <Avatar>
-                                <AvatarFallback className="bg-jade text-jade-foreground">
+                                <AvatarFallback className="bg-gold text-gold-foreground">
                                     {initials(user?.name ?? user?.email)}
                                 </AvatarFallback>
                             </Avatar>
@@ -110,8 +117,16 @@ function TopNav({ title, subtitle, dateRange }: Omit<SidebarLayoutProps, 'childr
 }
 
 function SidebarLayout({ title, subtitle, dateRange, children }: SidebarLayoutProps) {
+    const [defaultOpen] = useState(() => {
+        const cookie = getCookie('sidebar_state');
+        return cookie === undefined ? false : cookie === 'true';
+    });
+
     return (
-        <SidebarProvider style={{ '--sidebar-width': '15.625rem' } as React.CSSProperties}>
+        <SidebarProvider
+            defaultOpen={defaultOpen}
+            style={{ '--sidebar-width': '15.625rem' } as React.CSSProperties}
+        >
             <Head title={title} />
             <AppSidebar />
             <SidebarInset>

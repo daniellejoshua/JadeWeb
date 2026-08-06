@@ -14,7 +14,7 @@ function stockStatus(product: { current_stock: number; reorder_level: number }) 
     if (product.current_stock <= product.reorder_level) {
         return { label: 'Low Stock', className: 'bg-amber-100 text-amber-700' };
     }
-    return { label: 'In Stock', className: 'bg-jade-soft text-jade' };
+    return { label: 'In Stock', className: 'bg-gold-soft text-gold-strong' };
 }
 
 function Products() {

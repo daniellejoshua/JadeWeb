@@ -4,7 +4,17 @@
  * Mirrors docs/supabase_schema.sql.
  */
 
-import { format, subDays } from 'date-fns';
+import {
+    endOfDay,
+    endOfMonth,
+    format,
+    startOfDay,
+    startOfMonth,
+    startOfWeek,
+    startOfYear,
+    subDays,
+    subMonths,
+} from 'date-fns';
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -173,13 +183,15 @@ const saleStatuses = ['Completed', 'Completed', 'Completed', 'Completed', 'Void'
 
 const productIds = products.map((p) => p.id);
 
-export const sales: Sale[] = Array.from({ length: 420 }).map((_, i) => {
-    const dayOffset = Math.floor(i / 14);
-    const slot = i % 14;
+export const sales: Sale[] = Array.from({ length: 365 * 3 * 15 }).map((_, i) => {
+    const dayOffset = Math.floor(i / 15);
+    const slot = i % 15;
     const date = subDays(new Date(), dayOffset);
-    const base = 800 + dayOffset * 45 + slot * 30;
-    const noise = rand() * 300;
-    const weekend = date.getDay() === 0 || date.getDay() === 6 ? 0.75 : 1;
+    const month = date.getMonth();
+    const seasonal = month === 10 || month === 11 ? 1.18 : month === 0 ? 0.9 : 1;
+    const base = (900 + (1095 - dayOffset) * 1.6) * seasonal + slot * 25;
+    const noise = rand() * 250;
+    const weekend = date.getDay() === 0 || date.getDay() === 6 ? 0.72 : 1;
     const total = Math.round((base * weekend + noise) * 100) / 100;
 
     return {
@@ -274,28 +286,131 @@ export const inventoryStatus = {
 /* Derived helpers (used by the dashboard)                             */
 /* ------------------------------------------------------------------ */
 
-export type RevenuePoint = { date: string; revenue: number; orders: number };
+export type RevenuePoint = {
+    date: string;
+    revenue: number;
+    expense: number;
+    profit: number;
+    orders: number;
+};
 
-export function getRevenueSeries(days: number): RevenuePoint[] {
-    return Array.from({ length: days }).map((_, i) => {
-        const day = subDays(new Date(), days - 1 - i);
-        const iso = format(day, 'yyyy-MM-dd');
-        const daySales = sales.filter((s) => s.sale_date.startsWith(iso) && s.status !== 'Void');
-        return {
-            date: format(day, 'MMM d'),
-            revenue: Math.round(daySales.reduce((sum, s) => sum + s.total_amount, 0) * 100) / 100,
-            orders: daySales.length,
-        };
-    });
+export type PeriodKey =
+    | 'today'
+    | 'last7'
+    | 'last30'
+    | 'thisMonth'
+    | 'lastMonth'
+    | 'thisYear'
+    | 'allTime';
+
+export const periodLabels: Record<PeriodKey, string> = {
+    today: 'Today',
+    last7: 'Last 7 days',
+    last30: 'Last 30 days',
+    thisMonth: 'This Month',
+    lastMonth: 'Last Month',
+    thisYear: 'This Year',
+    allTime: 'All time',
+};
+
+export const periodOptions = (Object.keys(periodLabels) as PeriodKey[]).map((value) => ({
+    value,
+    label: periodLabels[value],
+}));
+
+export function periodRange(key: PeriodKey): { start: Date; end: Date } | null {
+    const now = new Date();
+    switch (key) {
+        case 'today':
+            return { start: startOfDay(now), end: endOfDay(now) };
+        case 'last7':
+            return { start: startOfDay(subDays(now, 6)), end: endOfDay(now) };
+        case 'last30':
+            return { start: startOfDay(subDays(now, 29)), end: endOfDay(now) };
+        case 'thisMonth':
+            return { start: startOfMonth(now), end: endOfDay(now) };
+        case 'lastMonth':
+            return {
+                start: startOfMonth(subMonths(now, 1)),
+                end: endOfMonth(subMonths(now, 1)),
+            };
+        case 'thisYear':
+            return { start: startOfYear(now), end: endOfDay(now) };
+        case 'allTime':
+            return null;
+    }
 }
 
-export function salesInRange(days: number): Sale[] {
-    const from = subDays(new Date(), days - 1).toISOString();
-    return sales.filter((s) => s.sale_date >= from);
+export function periodDayCount(key: PeriodKey): number {
+    const range = periodRange(key);
+    if (range) return Math.max(1, Math.floor((range.end.getTime() - range.start.getTime()) / 86_400_000) + 1);
+    const dates = sales.map((s) => new Date(s.sale_date).getTime());
+    return Math.max(1, Math.floor((Math.max(...dates) - Math.min(...dates)) / 86_400_000) + 1);
 }
 
-export function revenueInRange(days: number): number {
-    return Math.round(salesInRange(days).reduce((sum, s) => sum + s.total_amount, 0) * 100) / 100;
+function salesInPeriod(key: PeriodKey): Sale[] {
+    const range = periodRange(key);
+    if (!range) return sales;
+    const from = range.start.toISOString();
+    const to = range.end.toISOString();
+    return sales.filter((s) => s.sale_date >= from && s.sale_date <= to);
+}
+
+type Granularity = 'day' | 'week' | 'month';
+
+function granularityFor(key: PeriodKey): Granularity {
+    if (key === 'allTime') return 'month';
+    const days = periodDayCount(key);
+    if (days <= 31) return 'day';
+    if (days <= 180) return 'week';
+    return 'month';
+}
+
+function bucketStart(date: Date, granularity: Granularity): Date {
+    if (granularity === 'week') return startOfWeek(date, { weekStartsOn: 1 });
+    if (granularity === 'month') return startOfMonth(date);
+    return startOfDay(date);
+}
+
+export function getRevenueSeries(key: PeriodKey): RevenuePoint[] {
+    const granularity = granularityFor(key);
+    const range = periodRange(key);
+    const inPeriod = range
+        ? (s: Sale) => s.sale_date >= range.start.toISOString() && s.sale_date <= range.end.toISOString()
+        : () => true;
+
+    const buckets = new Map<string, { start: Date; revenue: number; orders: number }>();
+    for (const sale of sales) {
+        if (sale.status === 'Void' || !inPeriod(sale)) continue;
+        const start = bucketStart(new Date(sale.sale_date), granularity);
+        const bucketKey = format(start, 'yyyy-MM-dd');
+        const bucket = buckets.get(bucketKey) ?? { start, revenue: 0, orders: 0 };
+        bucket.revenue += sale.total_amount;
+        bucket.orders += 1;
+        buckets.set(bucketKey, bucket);
+    }
+
+    return [...buckets.values()]
+        .sort((a, b) => a.start.getTime() - b.start.getTime())
+        .map(({ start, revenue, orders }) => {
+            const rounded = Math.round(revenue * 100) / 100;
+            const profit = Math.round(rounded * grossMargin * 100) / 100;
+            return {
+                date: format(start, granularity === 'month' ? 'MMM yyyy' : 'MMM d'),
+                revenue: rounded,
+                expense: Math.round((rounded - profit) * 100) / 100,
+                profit,
+                orders,
+            };
+        });
+}
+
+export function salesInRange(key: PeriodKey): Sale[] {
+    return salesInPeriod(key).filter((s) => s.status !== 'Void');
+}
+
+export function revenueInRange(key: PeriodKey): number {
+    return Math.round(salesInRange(key).reduce((sum, s) => sum + s.total_amount, 0) * 100) / 100;
 }
 
 export const grossMargin = 0.34;
@@ -316,8 +431,8 @@ export function mockAssistantReply(input: string): string {
 
 | Metric | Value |
 | --- | --- |
-| Revenue (30d) | ₱${revenueInRange(30).toLocaleString()} |
-| Orders (30d) | ${salesInRange(30).length} |
+| Revenue (30d) | ₱${revenueInRange('last30').toLocaleString()} |
+| Orders (30d) | ${salesInRange('last30').length} |
 | Gross margin | ${Math.round(grossMargin * 100)}% |
 
 > Revenue grew steadily over the past two weeks, with weekends slightly slower than weekdays.

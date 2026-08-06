@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const statusStyles: Record<string, string> = {
-    Completed: 'bg-jade-soft text-jade',
+    Completed: 'bg-gold-soft text-gold-strong',
     Pending: 'bg-amber-100 text-amber-700',
     Void: 'bg-muted text-muted-foreground',
 };

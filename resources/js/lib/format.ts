@@ -6,6 +6,16 @@ export function formatCurrency(value: number, currency = 'PHP'): string {
     }).format(value);
 }
 
+export function formatCompactCurrency(value: number, currency = 'PHP', threshold = 1_000_000): string {
+    if (Math.abs(value) < threshold) return formatCurrency(value, currency);
+    return new Intl.NumberFormat('en-PH', {
+        style: 'currency',
+        currency,
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }).format(value);
+}
+
 export function formatNumber(value: number): string {
     return new Intl.NumberFormat('en-PH').format(value);
 }

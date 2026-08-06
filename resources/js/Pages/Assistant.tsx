@@ -14,7 +14,7 @@ function Assistant() {
                 <DashboardCard className="flex flex-1 flex-col p-6">
                     <CardContent className="flex flex-1 flex-col gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-jade/30 to-jade/10 text-jade">
+                            <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/30 to-gold/10 text-gold-strong">
                                 <Sparkles className="size-5" />
                             </div>
                             <div className="flex flex-col leading-tight">

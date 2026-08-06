@@ -46,7 +46,7 @@ function Staff() {
                                             className={cn(
                                                 'rounded-full border-0',
                                                 user.is_active
-                                                    ? 'bg-jade-soft text-jade'
+                                                    ? 'bg-gold-soft text-gold-strong'
                                                     : 'bg-muted text-muted-foreground',
                                             )}
                                         >
