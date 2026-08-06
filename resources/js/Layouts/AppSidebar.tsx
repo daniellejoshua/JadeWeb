@@ -10,11 +10,11 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
     SidebarSeparator,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { Link } from '@inertiajs/react';
 import {
     Boxes,
-    Gem,
     LayoutDashboard,
     LogOut,
     Package,
@@ -50,21 +50,25 @@ const navGroups = [
 ] as const;
 
 function AppSidebar() {
+    const { toggleSidebar } = useSidebar();
+
     return (
         <Sidebar collapsible="icon">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild size="lg">
-                            <Link href={route('dashboard')}>
-                                <div className="flex size-8 items-center justify-center rounded-lg bg-gold text-gold-foreground">
-                                    <Gem className="size-4" />
-                                </div>
+                        <SidebarMenuButton asChild size="lg" tooltip="Toggle sidebar">
+                            <button type="button" onClick={toggleSidebar}>
+                                <img
+                                    src="/images/logo.png"
+                                    alt="Jade Clinic"
+                                    className="size-8 shrink-0 rounded-lg object-contain"
+                                />
                                 <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
                                     <span className="font-semibold">Jade Clinic</span>
                                     <span className="text-xs text-muted-foreground">Admin Dashboard</span>
                                 </div>
-                            </Link>
+                            </button>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

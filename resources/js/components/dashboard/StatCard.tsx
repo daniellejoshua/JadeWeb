@@ -1,4 +1,9 @@
 import DashboardCard from '@/components/dashboard/DashboardCard';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -9,17 +14,33 @@ type StatCardProps = {
     sub?: ReactNode;
     icon: LucideIcon;
     iconClassName?: string;
+    tooltip?: ReactNode;
 };
 
-function StatCard({ label, value, sub, icon: Icon, iconClassName }: StatCardProps) {
+function StatCard({ label, value, sub, icon: Icon, iconClassName, tooltip }: StatCardProps) {
+    const valueNode = (
+        <span className="break-words text-2xl font-semibold leading-snug tracking-tight tabular-nums min-[480px]:text-lg min-[1536px]:text-xl">
+            {value}
+        </span>
+    );
+
     return (
         <DashboardCard className="p-5">
             <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-col gap-1">
                     <span className="text-sm text-muted-foreground">{label}</span>
-                    <span className="break-words text-2xl font-semibold leading-snug tracking-tight tabular-nums min-[480px]:text-lg min-[1536px]:text-xl">
-                        {value}
-                    </span>
+                    {tooltip ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild className="cursor-help justify-start text-left">
+                                {valueNode}
+                            </TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={4}>
+                                {tooltip}
+                            </TooltipContent>
+                        </Tooltip>
+                    ) : (
+                        valueNode
+                    )}
                     {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
                 </div>
                 <div

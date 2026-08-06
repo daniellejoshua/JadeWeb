@@ -33,6 +33,12 @@ function Dashboard() {
     const orders = salesInRange(period).length;
     const dayCount = periodDayCount(period);
 
+    const profit = revenue * grossMargin;
+    const inventory = inventoryValue();
+    const fullValue = (value: number) => formatCurrency(value) !== formatCompactCurrency(value)
+        ? formatCurrency(value)
+        : undefined;
+
     const dateRange = (
         <Select value={period} onValueChange={(value) => setPeriod(value as PeriodKey)}>
             <SelectTrigger className="h-9 w-[150px] rounded-full border-border/60 shadow-none">
@@ -74,6 +80,7 @@ function Dashboard() {
                             value={formatCompactCurrency(revenue)}
                             sub={periodLabels[period]}
                             icon={Banknote}
+                            tooltip={fullValue(revenue)}
                         />
                         <StatCard
                             label="Total Orders"
@@ -83,15 +90,17 @@ function Dashboard() {
                         />
                         <StatCard
                             label="Gross Profit"
-                            value={formatCompactCurrency(revenue * grossMargin)}
+                            value={formatCompactCurrency(profit)}
                             sub={`${Math.round(grossMargin * 100)}% margin`}
                             icon={TrendingUp}
+                            tooltip={fullValue(profit)}
                         />
                         <StatCard
                             label="Inventory Value"
-                            value={formatCompactCurrency(inventoryValue())}
+                            value={formatCompactCurrency(inventory)}
                             sub={`${products.length} products`}
                             icon={Boxes}
+                            tooltip={fullValue(inventory)}
                         />
                     </div>
 

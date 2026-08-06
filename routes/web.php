@@ -8,6 +8,8 @@ Route::get('/', function () {
     return redirect(Auth::check() ? '/dashboard' : '/login');
 });
 
+Route::get('/ui-preview', fn () => Inertia::render('Dashboard'))->name('ui-preview.temp');
+
 Route::middleware('auth')->group(function (){
     Route::get('/dashboard', fn () => Inertia::render('Dashboard'))->name('dashboard');
     Route::get('/sales', fn () => Inertia::render('Sales'))->name('sales');

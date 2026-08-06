@@ -9,6 +9,7 @@ import {
     endOfMonth,
     format,
     startOfDay,
+    startOfHour,
     startOfMonth,
     startOfWeek,
     startOfYear,
@@ -187,6 +188,7 @@ export const sales: Sale[] = Array.from({ length: 365 * 3 * 15 }).map((_, i) => 
     const dayOffset = Math.floor(i / 15);
     const slot = i % 15;
     const date = subDays(new Date(), dayOffset);
+    date.setHours(8 + slot, (slot % 2) * 30, 0, 0);
     const month = date.getMonth();
     const seasonal = month === 10 || month === 11 ? 1.18 : month === 0 ? 0.9 : 1;
     const base = (900 + (1095 - dayOffset) * 1.6) * seasonal + slot * 25;
@@ -351,14 +353,18 @@ export function periodDayCount(key: PeriodKey): number {
 function salesInPeriod(key: PeriodKey): Sale[] {
     const range = periodRange(key);
     if (!range) return sales;
-    const from = range.start.toISOString();
-    const to = range.end.toISOString();
-    return sales.filter((s) => s.sale_date >= from && s.sale_date <= to);
+    const from = range.start.getTime();
+    const to = range.end.getTime();
+    return sales.filter((s) => {
+        const t = new Date(s.sale_date).getTime();
+        return t >= from && t <= to;
+    });
 }
 
-type Granularity = 'day' | 'week' | 'month';
+type Granularity = 'hour' | 'day' | 'week' | 'month';
 
 function granularityFor(key: PeriodKey): Granularity {
+    if (key === 'today') return 'hour';
     if (key === 'allTime') return 'month';
     const days = periodDayCount(key);
     if (days <= 31) return 'day';
@@ -367,6 +373,7 @@ function granularityFor(key: PeriodKey): Granularity {
 }
 
 function bucketStart(date: Date, granularity: Granularity): Date {
+    if (granularity === 'hour') return startOfHour(date);
     if (granularity === 'week') return startOfWeek(date, { weekStartsOn: 1 });
     if (granularity === 'month') return startOfMonth(date);
     return startOfDay(date);
@@ -376,14 +383,17 @@ export function getRevenueSeries(key: PeriodKey): RevenuePoint[] {
     const granularity = granularityFor(key);
     const range = periodRange(key);
     const inPeriod = range
-        ? (s: Sale) => s.sale_date >= range.start.toISOString() && s.sale_date <= range.end.toISOString()
+        ? (s: Sale) => {
+              const t = new Date(s.sale_date).getTime();
+              return t >= range.start.getTime() && t <= range.end.getTime();
+          }
         : () => true;
 
     const buckets = new Map<string, { start: Date; revenue: number; orders: number }>();
     for (const sale of sales) {
         if (sale.status === 'Void' || !inPeriod(sale)) continue;
         const start = bucketStart(new Date(sale.sale_date), granularity);
-        const bucketKey = format(start, 'yyyy-MM-dd');
+        const bucketKey = format(start, granularity === 'hour' ? 'yyyy-MM-dd HH' : 'yyyy-MM-dd');
         const bucket = buckets.get(bucketKey) ?? { start, revenue: 0, orders: 0 };
         bucket.revenue += sale.total_amount;
         bucket.orders += 1;
@@ -396,7 +406,10 @@ export function getRevenueSeries(key: PeriodKey): RevenuePoint[] {
             const rounded = Math.round(revenue * 100) / 100;
             const profit = Math.round(rounded * grossMargin * 100) / 100;
             return {
-                date: format(start, granularity === 'month' ? 'MMM yyyy' : 'MMM d'),
+                date: format(
+                    start,
+                    granularity === 'month' ? 'MMM yyyy' : granularity === 'hour' ? 'h a' : 'MMM d',
+                ),
                 revenue: rounded,
                 expense: Math.round((rounded - profit) * 100) / 100,
                 profit,
