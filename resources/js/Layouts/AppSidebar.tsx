@@ -12,6 +12,11 @@ import {
     SidebarSeparator,
     useSidebar,
 } from '@/components/ui/sidebar';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Link } from '@inertiajs/react';
 import {
     Boxes,
@@ -57,19 +62,26 @@ function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild size="lg" tooltip="Toggle sidebar">
-                            <button type="button" onClick={toggleSidebar}>
-                                <img
-                                    src="/images/logo.png"
-                                    alt="Jade Clinic"
-                                    className="size-8 shrink-0 rounded-lg object-contain"
-                                />
-                                <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
-                                    <span className="font-semibold">Jade Clinic</span>
-                                    <span className="text-xs text-muted-foreground">Admin Dashboard</span>
-                                </div>
-                            </button>
-                        </SidebarMenuButton>
+                        <Tooltip>
+                            <SidebarMenuButton asChild size="lg">
+                                <TooltipTrigger asChild>
+                                    <button type="button" onClick={toggleSidebar} className="cursor-pointer">
+                                        <img
+                                            src="/images/logo.png"
+                                            alt="Jade Clinic"
+                                            className="size-8 shrink-0 rounded-lg object-contain"
+                                        />
+                                        <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
+                                            <span className="font-semibold">Jade Clinic</span>
+                                            <span className="text-xs text-muted-foreground">Admin Dashboard</span>
+                                        </div>
+                                    </button>
+                                </TooltipTrigger>
+                            </SidebarMenuButton>
+                            <TooltipContent side="right" align="center">
+                                Toggle sidebar
+                            </TooltipContent>
+                        </Tooltip>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
