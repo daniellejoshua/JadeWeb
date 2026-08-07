@@ -26,15 +26,15 @@ import {
 } from '@/data/mock';
 import { formatCompactCurrency, formatCurrency, formatNumber, formatShortDate } from '@/lib/format';
 import { Banknote, Boxes, ShoppingBag, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 function Dashboard() {
     const user = usePage().props.auth.user;
 
     const [period, setPeriod] = useState<PeriodKey>('last30');
 
-    const revenue = revenueInRange(period);
-    const orders = salesInRange(period).length;
+    const revenue = useMemo(() => revenueInRange(period), [period]);
+    const orders = useMemo(() => salesInRange(period).length, [period]);
     const dayCount = periodDayCount(period);
 
     const profit = revenue * grossMargin;

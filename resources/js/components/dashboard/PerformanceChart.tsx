@@ -14,6 +14,7 @@ import {
     type ChartConfig,
 } from '@/components/ui/chart';
 import { getRevenueSeries, periodLabels, type PeriodKey, type RevenuePoint } from '@/data/mock';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { formatCurrency } from '@/lib/format';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import type { ReactNode } from 'react';
@@ -85,7 +86,7 @@ type PerformanceChartProps = {
 
 function PerformanceChart({ period, action }: PerformanceChartProps) {
     const data = getRevenueSeries(period);
-    const tickInterval = Math.max(0, Math.ceil(data.length / 9) - 1);
+    const isMobile = useIsMobile();
 
     return (
         <DashboardCard>
@@ -114,12 +115,11 @@ function PerformanceChart({ period, action }: PerformanceChartProps) {
                         <CartesianGrid vertical={false} className="stroke-border/60" />
                         <XAxis
                             dataKey="date"
-                            interval={tickInterval}
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={8}
-                            tick={{ fontSize: 12 }}
-                            minTickGap={16}
+                            tickMargin={isMobile ? 6 : 8}
+                            tick={{ fontSize: isMobile ? 11 : 12 }}
+                            minTickGap={isMobile ? 28 : 20}
                         />
                         <YAxis
                             tickLine={false}

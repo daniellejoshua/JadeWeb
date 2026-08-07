@@ -50,13 +50,13 @@ function SheetContent({
   showCloseButton = true,
   forceMount,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Content> & {
+}: Omit<React.ComponentProps<typeof SheetPrimitive.Content>, 'forceMount'> & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
   forceMount?: boolean
 }) {
   return (
-    <SheetPortal>
+    <SheetPortal forceMount={forceMount ? true : undefined}>
       <SheetOverlay forceMount={forceMount ? true : undefined} />
       <SheetPrimitive.Content
           data-slot="sheet-content"
