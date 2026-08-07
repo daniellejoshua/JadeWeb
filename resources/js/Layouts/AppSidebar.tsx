@@ -38,6 +38,7 @@ import { initials } from '@/lib/format';
 import { Link, usePage } from '@inertiajs/react';
 import {
     Boxes,
+    ChevronsUpDown,
     LayoutDashboard,
     LogOut,
     Package,
@@ -74,7 +75,7 @@ const navGroups = [
 ] as const;
 
 function AppSidebar() {
-    const { toggleSidebar } = useSidebar();
+    const { toggleSidebar, isMobile } = useSidebar();
     const user = usePage().props.auth.user;
     const [logoutOpen, setLogoutOpen] = useState(false);
 
@@ -137,7 +138,11 @@ function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu>
-                            <SidebarMenuButton asChild size="lg" className="cursor-pointer">
+                            <SidebarMenuButton
+                                asChild
+                                size="lg"
+                                className="cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                            >
                                 <DropdownMenuTrigger asChild>
                                     <button type="button" className="w-full text-left">
                                         <Avatar className="size-8 shrink-0">
@@ -153,22 +158,28 @@ function AppSidebar() {
                                                 {user?.email}
                                             </span>
                                         </div>
+                                        <ChevronsUpDown className="ml-auto size-4 shrink-0 group-data-[collapsible=icon]:hidden" />
                                     </button>
                                 </DropdownMenuTrigger>
                             </SidebarMenuButton>
-                            <DropdownMenuContent align="end" side="top" sideOffset={6} className="w-64 p-1.5">
-                                <DropdownMenuLabel className="px-2.5 py-2">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="size-9 shrink-0">
+                            <DropdownMenuContent
+                                className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-56 rounded-lg"
+                                side={isMobile ? 'bottom' : 'right'}
+                                align="end"
+                                sideOffset={4}
+                            >
+                                <DropdownMenuLabel className="p-0 font-normal">
+                                    <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                                        <Avatar className="size-8 shrink-0">
                                             <AvatarFallback className="bg-gold text-gold-foreground">
                                                 {initials(user?.name ?? user?.email)}
                                             </AvatarFallback>
                                         </Avatar>
-                                        <div className="flex min-w-0 flex-col">
+                                        <div className="grid min-w-0 flex-1 text-left leading-tight">
                                             <span className="truncate text-sm font-medium">
                                                 {user?.name ?? 'Clinic User'}
                                             </span>
-                                            <span className="truncate text-xs font-normal text-muted-foreground">
+                                            <span className="truncate text-xs text-muted-foreground">
                                                 {user?.email}
                                             </span>
                                         </div>
