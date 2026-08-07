@@ -32,9 +32,9 @@ type SidebarLayoutProps = PropsWithChildren<{
 
 function TopNav({ title, subtitle, dateRange }: Omit<SidebarLayoutProps, 'children'>) {
     return (
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6 supports-[backdrop-filter]:md:bg-background/60 md:bg-background/95 md:backdrop-blur">
             <div className="flex min-w-0 items-center gap-3">
-                <SidebarTrigger className="lg:hidden" />
+                <SidebarTrigger className="md:hidden" />
                 <div className="flex min-w-0 flex-col">
                     <h1 className="truncate text-lg font-semibold tracking-tight">{title}</h1>
                     {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}

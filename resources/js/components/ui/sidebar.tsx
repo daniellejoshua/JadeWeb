@@ -162,6 +162,13 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const [hasOpenedMobile, setHasOpenedMobile] = React.useState(false)
+
+  React.useEffect(() => {
+    if (openMobile && !hasOpenedMobile) {
+      setHasOpenedMobile(true)
+    }
+  }, [openMobile, hasOpenedMobile])
 
   if (collapsible === "none") {
     return (
@@ -186,7 +193,8 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          forceMount={hasOpenedMobile}
+          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground fill-mode-forwards data-closed:pointer-events-none [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
