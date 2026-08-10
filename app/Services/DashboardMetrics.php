@@ -33,32 +33,34 @@ class DashboardMetrics
     }
 
     public function topProducts(int $limit = 5): array
-    {
-        return DB::table('sale_items as si')
-            ->join('sales as s', 's.id', '=', 'si.sale_id')
-            ->join('products as p', 'p.id', '=', 'si.product_id')
-            ->where('s.sale_date', '>=', Carbon::now()->startOfMonth())
-            ->where(function ($q) {
-                $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
-            })
-            ->select('p.id', 'p.product_name', 'p.category', 'p.store', 'p.image_url')
-            ->selectRaw('SUM(si.quantity) as quantity_sold')
-            ->selectRaw('SUM(si.quantity * si.unit_price) as revenue')
-            ->groupBy('p.id', 'p.product_name', 'p.category', 'p.store', 'p.image_url')
-            ->orderByDesc('revenue')
-            ->limit($limit)
-            ->get()
-            ->map(fn ($row) => [
-                'id' => (int) $row->id,
-                'product_name' => $row->product_name,
-                'category' => $row->category,
-                'store' => $row->store,
-                'image_url' => $row->image_url,
-                'quantity_sold' => (int) $row->quantity_sold,
-                'revenue' => round((float) $row->revenue, 2),
-            ])
-            ->all();
-    }
+{
+    $storeName = DB::table('company_settings')->value('company_name') ?? 'Jade Clinic';
+
+    return DB::table('sale_items as si')
+        ->join('sales as s', 's.id', '=', 'si.sale_id')
+        ->join('products as p', 'p.id', '=', 'si.product_id')
+        ->where('s.sale_date', '>=', Carbon::now()->startOfMonth())
+        ->where(function ($q) {
+            $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
+        })
+        ->select('p.id', 'p.product_name', 'p.category', 'p.image_url')
+        ->selectRaw('SUM(si.quantity) as quantity_sold')
+        ->selectRaw('SUM(si.quantity * si.unit_price) as revenue')
+        ->groupBy('p.id', 'p.product_name', 'p.category', 'p.image_url')
+        ->orderByDesc('revenue')
+        ->limit($limit)
+        ->get()
+        ->map(fn ($row) => [
+            'id' => (int) $row->id,
+            'product_name' => $row->product_name,
+            'category' => $row->category,
+            'store' => $storeName,
+            'image_url' => $row->image_url,
+            'quantity_sold' => (int) $row->quantity_sold,
+            'revenue' => round((float) $row->revenue, 2),
+        ])
+        ->all();
+}
 
     public function inventoryStatus(): array
     {
