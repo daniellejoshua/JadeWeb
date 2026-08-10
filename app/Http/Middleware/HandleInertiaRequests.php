@@ -35,7 +35,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
-                'sync' => app(SyncStatusService::class)->get(),
+            'sync' => app(SyncStatusService::class)->get(),
 
         ];
     }
