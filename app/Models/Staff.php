@@ -15,7 +15,7 @@ class Staff extends Model
     ];
 
     public function sales():HasMany{
-        return $this->hasMany(Sale::class, 'sale_id');
+        return $this->hasMany(Sale::class, 'user_id');
     }
 
 
