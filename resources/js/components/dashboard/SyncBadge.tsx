@@ -1,9 +1,11 @@
 import { Badge } from '@/components/ui/badge';
-import { syncStatus } from '@/data/mock';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { usePage } from '@inertiajs/react';
+import type { PageProps } from '@inertiajs/core';
 import { RefreshCw } from 'lucide-react';
 
 function SyncBadge() {
+    const { sync } = usePage<PageProps>().props;
     return (
         <Tooltip>
             <TooltipTrigger asChild>
@@ -16,10 +18,10 @@ function SyncBadge() {
                         <span className="relative inline-flex size-2 rounded-full bg-gold" />
                     </span>
                     <RefreshCw className="size-3" />
-                    {syncStatus.label}
+                    {sync.label}
                 </Badge>
             </TooltipTrigger>
-            <TooltipContent>{syncStatus.detail}</TooltipContent>
+            <TooltipContent>{sync.detail}</TooltipContent>
         </Tooltip>
     );
 }

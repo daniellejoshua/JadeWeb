@@ -13,7 +13,7 @@ import {
     ChartLegendContent,
     type ChartConfig,
 } from '@/components/ui/chart';
-import { getRevenueSeries, periodLabels, type PeriodKey, type RevenuePoint } from '@/data/mock';
+import { type RevenuePoint } from '@/types/dashboard';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatCurrency } from '@/lib/format';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -80,12 +80,12 @@ function PerformanceTooltip({
 }
 
 type PerformanceChartProps = {
-    period: PeriodKey;
+    data: RevenuePoint[];
+    description: string;
     action?: ReactNode;
 };
 
-function PerformanceChart({ period, action }: PerformanceChartProps) {
-    const data = getRevenueSeries(period);
+function PerformanceChart({ data, description, action }: PerformanceChartProps) {
     const isMobile = useIsMobile();
 
     return (
@@ -94,7 +94,7 @@ function PerformanceChart({ period, action }: PerformanceChartProps) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <CardTitle>Performance Overview</CardTitle>
-                        <CardDescription>Expenses vs profit · {periodLabels[period]}</CardDescription>
+                        <CardDescription>{description}</CardDescription>
                     </div>
                     {action && <CardAction>{action}</CardAction>}
                 </div>

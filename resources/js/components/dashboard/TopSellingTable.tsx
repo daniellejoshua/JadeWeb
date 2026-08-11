@@ -8,12 +8,12 @@ import {
 } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Link } from '@inertiajs/react';
-import { topProducts } from '@/data/mock';
+import { type TopProduct } from '@/types/dashboard';
 import { formatCurrency } from '@/lib/format';
 import { ArrowUpRight, Package } from 'lucide-react';
 import { route } from 'ziggy-js';
 
-function TopSellingTable() {
+function TopSellingTable({ products }: { products: TopProduct[] }) {
     return (
         <DashboardCard>
             <CardHeader>
@@ -31,7 +31,7 @@ function TopSellingTable() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {topProducts.map((product) => (
+                        {products.map((product) => (
                             <TableRow key={product.id}>
                                 <TableCell>
                                     <div className="flex items-center gap-3">

@@ -11,7 +11,7 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart';
-import { inventoryStatus } from '@/data/mock';
+import { type InventoryStatus } from '@/types/dashboard';
 import { Cell, Pie, PieChart } from 'recharts';
 
 const chartConfig = {
@@ -20,15 +20,13 @@ const chartConfig = {
     outOfStock: { label: 'Out of Stock', color: 'var(--destructive)' },
 } satisfies ChartConfig;
 
-const data = [
-    { name: 'inStock', label: 'In Stock', value: inventoryStatus.inStock, color: 'oklch(0.723 0.219 149.579)' },
-    { name: 'lowStock', label: 'Low Stock', value: inventoryStatus.lowStock, color: 'oklch(0.795 0.184 86.047)' },
-    { name: 'outOfStock', label: 'Out of Stock', value: inventoryStatus.outOfStock, color: 'var(--destructive)' },
-];
-
-const total = data.reduce((sum, item) => sum + item.value, 0);
-
-function InventoryDonut() {
+function InventoryDonut({ status }: { status: InventoryStatus }) {
+    const data = [
+        { name: 'inStock', label: 'In Stock', value: status.inStock, color: chartConfig.inStock.color },
+        { name: 'lowStock', label: 'Low Stock', value: status.lowStock, color: chartConfig.lowStock.color },
+        { name: 'outOfStock', label: 'Out of Stock', value: status.outOfStock, color: chartConfig.outOfStock.color },
+    ];
+    const total = data.reduce((sum, item) => sum + item.value, 0);
     return (
         <DashboardCard>
             <CardHeader>
