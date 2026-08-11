@@ -31,6 +31,7 @@ function Dashboard() {
 
     const [period, setPeriod] = useState<PeriodKey>('last30');
     const current: PeriodData = periods[period];
+    const notSynced = current.stale || current.hasUnsynced;
 
     const fullValue = (value: number) =>
         formatCurrency(value) !== formatCompactCurrency(value)
@@ -80,23 +81,27 @@ function Dashboard() {
                     <div className="grid grid-cols-1 gap-6 min-[480px]:grid-cols-2">
                         <StatCard
                             label="Total Revenue"
-                            value={formatCompactCurrency(current.revenue)}
-                            sub={current.range}
+                            value={notSynced ? '—' : formatCompactCurrency(current.revenue)}
+                            sub={notSynced ? 'Not synced' : current.range}
+                            subTooltip={notSynced ? undefined : current.rangeFull}
+                            subClassName={notSynced ? 'text-amber-600' : undefined}
                             icon={Banknote}
-                            tooltip={fullValue(current.revenue)}
+                            tooltip={notSynced ? undefined : fullValue(current.revenue)}
                         />
                         <StatCard
                             label="Total Orders"
-                            value={formatNumber(current.orders)}
-                            sub={`Avg ${formatNumber(Math.round(current.orders / Math.max(current.dayCount, 1)))} per day`}
+                            value={notSynced ? '—' : formatNumber(current.orders)}
+                            sub={notSynced ? 'Not synced' : `Avg ${formatNumber(Math.round(current.orders / Math.max(current.dayCount, 1)))} per day`}
+                            subClassName={notSynced ? 'text-amber-600' : undefined}
                             icon={ShoppingBag}
                         />
                         <StatCard
                             label="Gross Profit"
-                            value={formatCompactCurrency(current.profit)}
-                            sub={`${margin}% margin`}
+                            value={notSynced ? '—' : formatCompactCurrency(current.profit)}
+                            sub={notSynced ? 'Not synced' : `${margin}% margin`}
+                            subClassName={notSynced ? 'text-amber-600' : undefined}
                             icon={TrendingUp}
-                            tooltip={fullValue(current.profit)}
+                            tooltip={notSynced ? undefined : fullValue(current.profit)}
                         />
                         <StatCard
                             label="Inventory Value"

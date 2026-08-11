@@ -1,4 +1,5 @@
 import DashboardCard from '@/components/dashboard/DashboardCard';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -8,12 +9,14 @@ type StatCardProps = {
     label: string;
     value: ReactNode;
     sub?: ReactNode;
+    subTooltip?: ReactNode;
+    subClassName?: string;
     icon: LucideIcon;
     iconClassName?: string;
     tooltip?: ReactNode;
 };
 
-function StatCard({ label, value, sub, icon: Icon, iconClassName, tooltip }: StatCardProps) {
+function StatCard({ label, value, sub, subTooltip, subClassName, icon: Icon, iconClassName, tooltip }: StatCardProps) {
     const [showFull, setShowFull] = useState(false);
     useEffect(() => {
         setShowFull(false);
@@ -43,7 +46,17 @@ function StatCard({ label, value, sub, icon: Icon, iconClassName, tooltip }: Sta
                     ) : (
                         valueNode
                     )}
-                    {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
+                    {sub &&
+                        (subTooltip ? (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className={cn('truncate text-xs text-muted-foreground', subClassName)}>{sub}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>{subTooltip}</TooltipContent>
+                            </Tooltip>
+                        ) : (
+                            <span className={cn('truncate text-xs text-muted-foreground', subClassName)}>{sub}</span>
+                        ))}
                 </div>
                 <div
                     className={cn(

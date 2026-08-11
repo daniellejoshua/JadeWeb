@@ -39,14 +39,21 @@ function PerformanceTooltip({
 }) {
     if (!active || !payload?.length) return null;
     const point = payload[0].payload;
+    const synced = point.synced;
 
     return (
         <div className="min-w-48 rounded-2xl border border-border/50 bg-popover p-3 text-xs shadow-xl">
             <div className="mb-2.5 flex items-center justify-between gap-6">
                 <span className="font-semibold text-foreground">{point.date}</span>
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                    {point.orders} orders
-                </span>
+                {synced ? (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {point.orders} orders
+                    </span>
+                ) : (
+                    <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+                        Not synced
+                    </span>
+                )}
             </div>
             <div className="grid gap-1.5">
                 {(
@@ -64,7 +71,7 @@ function PerformanceTooltip({
                             {row.label}
                         </span>
                         <span className="font-semibold tabular-nums text-foreground">
-                            {formatCurrency(row.value)}
+                            {synced ? formatCurrency(row.value) : '—'}
                         </span>
                     </div>
                 ))}
@@ -72,7 +79,7 @@ function PerformanceTooltip({
             <div className="mt-2 flex items-center justify-between gap-6 border-t border-border/60 pt-2">
                 <span className="text-muted-foreground">Revenue</span>
                 <span className="font-semibold tabular-nums text-foreground">
-                    {formatCurrency(point.revenue)}
+                    {synced ? formatCurrency(point.revenue) : '—'}
                 </span>
             </div>
         </div>

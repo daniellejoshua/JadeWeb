@@ -22,14 +22,35 @@ class DashboardMetrics
     public function periods(): array
     {
         $daily = $this->dailyRevenueOrders();
+        $now = Carbon::now();
+        $lastData = $this->referenceDate($daily);
+        $lastSync = $this->lastSyncDate();
         $profitByDay = $this->dailyProfit();
         $hourlyToday = $this->hourlyForToday();
 
         $periods = [];
         foreach (self::PERIOD_KEYS as $key) {
-            $periods[$key] = $this->period($key, $daily, $profitByDay, $hourlyToday);
+            $periods[$key] = $this->period($key, $daily, $profitByDay, $hourlyToday, $now, $lastData, $lastSync);
         }
         return $periods;
+    }
+
+    private function lastSyncDate(): Carbon
+    {
+        $last = DB::table('sync_log')->orderByDesc('id')->value('completed_at');
+
+        return $last ? Carbon::parse($last) : Carbon::now();
+    }
+
+    private function referenceDate(array $daily = []): Carbon
+    {
+        if ($daily) {
+            return Carbon::parse(max(array_column($daily, 'day')))->startOfDay();
+        }
+
+        $last = DB::table('sync_log')->orderByDesc('id')->value('completed_at');
+
+        return $last ? Carbon::parse($last) : Carbon::now();
     }
 
     public function topProducts(int $limit = 5): array
@@ -39,7 +60,7 @@ class DashboardMetrics
     return DB::table('sale_items as si')
         ->join('sales as s', 's.id', '=', 'si.sale_id')
         ->join('products as p', 'p.id', '=', 'si.product_id')
-        ->where('s.sale_date', '>=', Carbon::now()->startOfMonth())
+        ->where('s.sale_date', '>=', $this->referenceDate()->startOfMonth())
         ->where(function ($q) {
             $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
         })
@@ -81,10 +102,9 @@ class DashboardMetrics
         return DB::table('products')->count();
     }
 
-    private function period(string $key, array $daily, array $profitByDay, array $hourlyToday): array
+    private function period(string $key, array $daily, array $profitByDay, array $hourlyToday, Carbon $now, Carbon $lastData, Carbon $lastSync): array
     {
-        $now = Carbon::now();
-        [$start, $end] = $this->window($key, $daily);
+        [$start, $end] = $this->window($key, $daily, $now);
         $days = (int) $start->diffInDays($end) + 1;
 
         $granularity = $key === 'today' ? 'hour'
@@ -92,14 +112,25 @@ class DashboardMetrics
                 : ($days <= 31 ? 'day' : ($days <= 180 ? 'week' : 'month')));
 
         $series = $granularity === 'hour'
-            ? $this->bucketHourly($hourlyToday)
-            : $this->bucketDaily($daily, $profitByDay, $start, $end, $granularity);
+            ? $this->bucketHourly($hourlyToday, $lastSync)
+            : $this->bucketDaily($daily, $profitByDay, $start, $end, $granularity, $lastSync);
 
-       return [
+   return [
     'label' => self::PERIOD_LABELS[$key],
-    'range' => $start->isSameDay($end)
-        ? $start->format('M j, Y')
-        : $start->format('M j, Y') . ' – ' . $end->format('M j, Y'),
+    'stale' => $key === 'today' && ! $lastData->isToday(),
+    'hasUnsynced' => in_array(false, array_column($series, 'synced'), true),
+    'range' => $key === 'today'
+        ? 'As of ' . $lastData->format('M j')
+        : ($start->isSameDay($end)
+            ? $start->format('M j')
+            : ($start->isSameYear($end)
+                ? $start->format('M j') . ' – ' . $end->format('M j')
+                : $start->format('M j, y') . ' – ' . $end->format('M j, y'))),
+    'rangeFull' => $key === 'today'
+        ? 'As of ' . $lastData->format('M j, Y')
+        : ($start->isSameDay($end)
+            ? $start->format('M j, Y')
+            : $start->format('M j, Y') . ' – ' . $end->format('M j, Y')),
     'series' => $series,
     'revenue' => round(array_sum(array_column($series, 'revenue')), 2),
     'profit' => round(array_sum(array_column($series, 'profit')), 2),
@@ -108,9 +139,8 @@ class DashboardMetrics
 ];
     }
 
-    private function window(string $key, array $daily): array
+    private function window(string $key, array $daily, Carbon $now): array
     {
-        $now = Carbon::now();
         switch ($key) {
             case 'today':
                 return [$now->copy()->startOfDay(), $now->copy()->endOfDay()];
@@ -127,8 +157,7 @@ class DashboardMetrics
             case 'allTime':
                 $days = array_column($daily, 'day');
                 $min = $days ? Carbon::parse(min($days)) : $now->copy()->startOfYear();
-                $max = $days ? Carbon::parse(max($days)) : $now;
-                return [$min->copy()->startOfDay(), $max->copy()->endOfDay()];
+                return [$min->copy()->startOfDay(), $now->copy()->endOfDay()];
         }
         return [$now->copy()->startOfDay(), $now->copy()->endOfDay()];
     }
@@ -184,19 +213,29 @@ class DashboardMetrics
         return ['revenue' => $revenue, 'profit' => $profit];
     }
 
-    private function bucketDaily(array $daily, array $profitByDay, Carbon $start, Carbon $end, string $granularity): array
+    private function bucketDaily(array $daily, array $profitByDay, Carbon $start, Carbon $end, string $granularity, Carbon $lastSync): array
     {
         $buckets = [];
+
+        $cursor = $start->copy();
+        while ($cursor->lte($end)) {
+            $bucketStart = $this->bucketStart($cursor, $granularity);
+            $key = $this->bucketKey($bucketStart, $granularity);
+            if (! isset($buckets[$key])) {
+                $buckets[$key] = ['date' => $this->bucketLabel($bucketStart, $granularity), 'revenue' => 0.0, 'profit' => 0.0, 'orders' => 0, 'synced' => $bucketStart->lte($lastSync)];
+            }
+            $cursor = match ($granularity) {
+                'week' => $cursor->addDays(7),
+                'month' => $cursor->addMonthNoOverflow(),
+                default => $cursor->addDay(),
+            };
+        }
+
         foreach ($daily as $dayKey => $row) {
             $day = Carbon::parse($dayKey);
             if ($day->lt($start) || $day->gt($end)) continue;
 
-            $bucketStart = $this->bucketStart($day, $granularity);
-            $key = $this->bucketKey($bucketStart, $granularity);
-
-            if (! isset($buckets[$key])) {
-                $buckets[$key] = ['date' => $this->bucketLabel($bucketStart, $granularity), 'revenue' => 0.0, 'profit' => 0.0, 'orders' => 0];
-            }
+            $key = $this->bucketKey($this->bucketStart($day, $granularity), $granularity);
             $buckets[$key]['revenue'] += (float) $row->revenue;
             $buckets[$key]['orders'] += (int) $row->orders;
             $buckets[$key]['profit'] += (float) ($profitByDay[$dayKey]->profit ?? 0);
@@ -209,10 +248,11 @@ class DashboardMetrics
             'expense' => round($b['revenue'] - $b['profit'], 2),
             'profit' => round($b['profit'], 2),
             'orders' => $b['orders'],
+            'synced' => (bool) $b['synced'],
         ], array_values($buckets));
     }
 
-    private function bucketHourly(array $hourlyToday): array
+    private function bucketHourly(array $hourlyToday, Carbon $lastSync): array
     {
         return array_map(fn ($hour, $row) => [
             'date' => Carbon::parse($hour)->format('g A'),
@@ -220,6 +260,7 @@ class DashboardMetrics
             'expense' => round((float) $row->revenue - (float) ($hourlyToday['profit'][$hour]->profit ?? 0), 2),
             'profit' => round((float) ($hourlyToday['profit'][$hour]->profit ?? 0), 2),
             'orders' => (int) $row->orders,
+            'synced' => Carbon::parse($hour)->lte($lastSync),
         ], array_keys($hourlyToday['revenue']), array_values($hourlyToday['revenue']));
     }
 

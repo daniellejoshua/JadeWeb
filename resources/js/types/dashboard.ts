@@ -28,11 +28,15 @@ export type RevenuePoint = {
     expense: number;
     profit: number;
     orders: number;
+    synced: boolean;
 };
 
 export type PeriodData = {
     label: string;
+    stale: boolean;
+    hasUnsynced: boolean;
     range: string;
+    rangeFull: string;
     series: RevenuePoint[];
     revenue: number;
     profit: number;
