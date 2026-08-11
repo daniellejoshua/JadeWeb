@@ -27,10 +27,3 @@ interface User {
     user_metadata: Record<string, unknown>;
 }
 
-declare module '@inertiajs/core' {
-    interface PageProps extends InertiaPageProps {
-        auth: {
-            user: User | null;
-        };
-    }
-}
