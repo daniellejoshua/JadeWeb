@@ -1,4 +1,5 @@
 import DashboardCard from '@/components/dashboard/DashboardCard';
+import JadeAvatar from '@/components/assistant/JadeAvatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
@@ -26,9 +27,7 @@ function AiAssistantCard() {
 
             {!chatOpen ? (
                 <CardContent className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-                    <div className="flex size-16 items-center justify-center rounded-3xl bg-gradient-to-br from-gold/30 to-gold/10 text-gold-strong">
-                        <Sparkles className="size-8" />
-                    </div>
+                    <JadeAvatar size="lg" />
                     <div className="flex flex-col gap-1">
                         <span className="text-lg font-semibold tracking-tight">Meet Jade</span>
                         <span className="max-w-[260px] text-sm text-muted-foreground">
@@ -57,9 +56,7 @@ function AiAssistantCard() {
                 <CardContent className="flex flex-col gap-3 pt-6">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                            <div className="flex size-8 items-center justify-center rounded-xl bg-gold-soft text-gold-strong">
-                                <Sparkles className="size-4" />
-                            </div>
+                            <JadeAvatar size="sm" />
                             <div className="flex flex-col leading-tight">
                                 <span className="text-sm font-medium">Chat with Jade</span>
                                 <span className="text-xs text-muted-foreground">AI Assistant</span>

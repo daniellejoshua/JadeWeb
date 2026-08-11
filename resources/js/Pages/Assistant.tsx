@@ -1,8 +1,8 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import AiAssistantChat from '@/components/assistant/AiAssistantChat';
+import JadeAvatar from '@/components/assistant/JadeAvatar';
 import DashboardCard from '@/components/dashboard/DashboardCard';
 import { CardContent } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
 
 function Assistant() {
     return (
@@ -14,9 +14,7 @@ function Assistant() {
                 <DashboardCard className="flex flex-1 flex-col p-6">
                     <CardContent className="flex flex-1 flex-col gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-br from-gold/30 to-gold/10 text-gold-strong">
-                                <Sparkles className="size-5" />
-                            </div>
+                            <JadeAvatar size="md" />
                             <div className="flex flex-col leading-tight">
                                 <span className="font-medium">Jade</span>
                                 <span className="text-xs text-muted-foreground">
