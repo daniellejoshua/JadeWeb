@@ -14,7 +14,7 @@ class DashboardController extends Controller
             'topProducts' => $metrics->topProducts(),
             'inventoryStatus' => $metrics->inventoryStatus(),
             'inventoryValue' => $metrics->inventoryValue(),
-    'productCount' => $metrics->productCount(),
+            'productCount' => $metrics->productCount(),
         ]);
 
    }

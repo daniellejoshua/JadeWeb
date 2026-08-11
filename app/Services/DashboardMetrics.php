@@ -95,14 +95,17 @@ class DashboardMetrics
             ? $this->bucketHourly($hourlyToday)
             : $this->bucketDaily($daily, $profitByDay, $start, $end, $granularity);
 
-        return [
-            'label' => self::PERIOD_LABELS[$key],
-            'series' => $series,
-            'revenue' => round(array_sum(array_column($series, 'revenue')), 2),
-            'profit' => round(array_sum(array_column($series, 'profit')), 2),
-            'orders' => array_sum(array_column($series, 'orders')),
-            'dayCount' => max(1, $days),
-        ];
+       return [
+    'label' => self::PERIOD_LABELS[$key],
+    'range' => $start->isSameDay($end)
+        ? $start->format('M j, Y')
+        : $start->format('M j, Y') . ' – ' . $end->format('M j, Y'),
+    'series' => $series,
+    'revenue' => round(array_sum(array_column($series, 'revenue')), 2),
+    'profit' => round(array_sum(array_column($series, 'profit')), 2),
+    'orders' => array_sum(array_column($series, 'orders')),
+    'dayCount' => max(1, $days),
+];
     }
 
     private function window(string $key, array $daily): array
