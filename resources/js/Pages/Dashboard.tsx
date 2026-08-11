@@ -13,42 +13,31 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {
-    grossMargin,
-    inventoryValue,
-    periodDayCount,
-    periodLabels,
     periodOptions,
-    periodRange,
-    products,
-    revenueInRange,
-    salesInRange,
+    type DashboardProps,
+    type PeriodData,
     type PeriodKey,
-} from '@/data/mock';
-import { formatCompactCurrency, formatCurrency, formatNumber, formatShortDate } from '@/lib/format';
+} from '@/types/dashboard';
+import { formatCompactCurrency, formatCurrency, formatNumber } from '@/lib/format';
+import type { PageProps } from '@inertiajs/core';
 import { Banknote, Boxes, ShoppingBag, TrendingUp } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 function Dashboard() {
     const user = usePage().props.auth.user;
 
+    const { periods, topProducts, inventoryStatus, inventoryValue, productCount } =
+        usePage<PageProps & DashboardProps>().props;
+
     const [period, setPeriod] = useState<PeriodKey>('last30');
+    const current: PeriodData = periods[period];
 
-    const revenue = useMemo(() => revenueInRange(period), [period]);
-    const orders = useMemo(() => salesInRange(period).length, [period]);
-    const dayCount = periodDayCount(period);
+    const fullValue = (value: number) =>
+        formatCurrency(value) !== formatCompactCurrency(value)
+            ? formatCurrency(value)
+            : undefined;
 
-    const profit = revenue * grossMargin;
-    const inventory = inventoryValue();
-    const fullValue = (value: number) => formatCurrency(value) !== formatCompactCurrency(value)
-        ? formatCurrency(value)
-        : undefined;
-
-    const range = periodRange(period);
-    const revenueSub = range
-        ? range.start.toDateString() === range.end.toDateString()
-            ? formatShortDate(range.start)
-            : `${formatShortDate(range.start)} – ${formatShortDate(range.end)}`
-        : periodLabels[period];
+    const margin = current.revenue > 0 ? Math.round((current.profit / current.revenue) * 100) : 0;
 
     const dateRange = (
         <Select value={period} onValueChange={(value) => setPeriod(value as PeriodKey)}>
@@ -80,42 +69,45 @@ function Dashboard() {
         >
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
                 <div className="flex flex-col gap-6 lg:col-span-3">
-                    <PerformanceChart period={period} />
-                    <TopSellingTable />
+                    <PerformanceChart
+                        data={current.series}
+                        description={`Expenses vs profit · ${current.label}`}
+                    />
+                    <TopSellingTable products={topProducts} />
                 </div>
 
                 <div className="flex flex-col gap-6 lg:col-span-2">
                     <div className="grid grid-cols-1 gap-6 min-[480px]:grid-cols-2">
                         <StatCard
                             label="Total Revenue"
-                            value={formatCompactCurrency(revenue)}
-                            sub={revenueSub}
+                            value={formatCompactCurrency(current.revenue)}
+                            sub={current.range}
                             icon={Banknote}
-                            tooltip={fullValue(revenue)}
+                            tooltip={fullValue(current.revenue)}
                         />
                         <StatCard
                             label="Total Orders"
-                            value={formatNumber(orders)}
-                            sub={`Avg ${formatNumber(Math.round(orders / Math.max(dayCount, 1)))} per day`}
+                            value={formatNumber(current.orders)}
+                            sub={`Avg ${formatNumber(Math.round(current.orders / Math.max(current.dayCount, 1)))} per day`}
                             icon={ShoppingBag}
                         />
                         <StatCard
                             label="Gross Profit"
-                            value={formatCompactCurrency(profit)}
-                            sub={`${Math.round(grossMargin * 100)}% margin`}
+                            value={formatCompactCurrency(current.profit)}
+                            sub={`${margin}% margin`}
                             icon={TrendingUp}
-                            tooltip={fullValue(profit)}
+                            tooltip={fullValue(current.profit)}
                         />
                         <StatCard
                             label="Inventory Value"
-                            value={formatCompactCurrency(inventory)}
-                            sub={`${products.length} products`}
+                            value={formatCompactCurrency(inventoryValue)}
+                            sub={`${productCount} products`}
                             icon={Boxes}
-                            tooltip={fullValue(inventory)}
+                            tooltip={fullValue(inventoryValue)}
                         />
                     </div>
 
-                    <InventoryDonut />
+                    <InventoryDonut status={inventoryStatus} />
                     <AiAssistantCard />
                 </div>
             </div>
