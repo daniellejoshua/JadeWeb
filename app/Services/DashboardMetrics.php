@@ -3,10 +3,16 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class DashboardMetrics
 {
+    private const DB_OUTAGE_KEY = 'dashboard.db_unreachable';
+
+    private bool $unavailable = false;
+
     public const PERIOD_KEYS = ['today', 'last7', 'last30', 'thisMonth', 'lastMonth', 'thisYear', 'allTime'];
 
     public const PERIOD_LABELS = [
@@ -21,17 +27,50 @@ class DashboardMetrics
 
     public function periods(): array
     {
-        $daily = $this->dailyRevenueOrders();
         $now = Carbon::now();
-        $lastData = $this->referenceDate($daily);
-        $lastSync = $this->lastSyncDate();
-        $profitByDay = $this->dailyProfit();
-        $hourlyToday = $this->hourlyForToday();
 
+        if ($this->guard()) {
+            return $this->degraded($now);
+        }
+
+        try {
+            $daily = $this->dailyRevenueOrders();
+            $lastData = $this->referenceDate($daily);
+            $lastSync = $this->lastSyncDate();
+            $profitByDay = $this->dailyProfit();
+            $hourlyToday = $this->hourlyForToday();
+        } catch (Throwable) {
+            $this->markDown();
+            return $this->degraded($now);
+        }
+
+        return $this->buildPeriods($daily, $profitByDay, $hourlyToday, $now, $lastData, $lastSync);
+    }
+
+    private function guard(): bool
+    {
+        return Cache::get(self::DB_OUTAGE_KEY, false);
+    }
+
+    private function markDown(): void
+    {
+        $this->unavailable = true;
+        Cache::put(self::DB_OUTAGE_KEY, true, now()->addMinute());
+    }
+
+    private function degraded(Carbon $now): array
+    {
+        $this->unavailable = true;
+        return $this->buildPeriods([], [], ['revenue' => [], 'profit' => []], $now, $now, $now);
+    }
+
+    private function buildPeriods(array $daily, array $profitByDay, array $hourlyToday, Carbon $now, Carbon $lastData, Carbon $lastSync): array
+    {
         $periods = [];
         foreach (self::PERIOD_KEYS as $key) {
             $periods[$key] = $this->period($key, $daily, $profitByDay, $hourlyToday, $now, $lastData, $lastSync);
         }
+
         return $periods;
     }
 
@@ -54,52 +93,88 @@ class DashboardMetrics
     }
 
     public function topProducts(int $limit = 5): array
-{
-    $storeName = DB::table('company_settings')->value('company_name') ?? 'Jade Clinic';
+    {
+        if ($this->guard()) {
+            return [];
+        }
 
-    return DB::table('sale_items as si')
-        ->join('sales as s', 's.id', '=', 'si.sale_id')
-        ->join('products as p', 'p.id', '=', 'si.product_id')
-        ->where('s.sale_date', '>=', $this->referenceDate()->startOfMonth())
-        ->where(function ($q) {
-            $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
-        })
-        ->select('p.id', 'p.product_name', 'p.category', 'p.image_url')
-        ->selectRaw('SUM(si.quantity) as quantity_sold')
-        ->selectRaw('SUM(si.quantity * si.unit_price) as revenue')
-        ->groupBy('p.id', 'p.product_name', 'p.category', 'p.image_url')
-        ->orderByDesc('revenue')
-        ->limit($limit)
-        ->get()
-        ->map(fn ($row) => [
-            'id' => (int) $row->id,
-            'product_name' => $row->product_name,
-            'category' => $row->category,
-            'store' => $storeName,
-            'image_url' => $row->image_url,
-            'quantity_sold' => (int) $row->quantity_sold,
-            'revenue' => round((float) $row->revenue, 2),
-        ])
-        ->all();
-}
+        try {
+            $storeName = DB::table('company_settings')->value('company_name') ?? 'Jade Clinic';
+
+            return DB::table('sale_items as si')
+                ->join('sales as s', 's.id', '=', 'si.sale_id')
+                ->join('products as p', 'p.id', '=', 'si.product_id')
+                ->where('s.sale_date', '>=', $this->referenceDate()->startOfMonth())
+                ->where(function ($q) {
+                    $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
+                })
+                ->select('p.id', 'p.product_name', 'p.category', 'p.image_url')
+                ->selectRaw('SUM(si.quantity) as quantity_sold')
+                ->selectRaw('SUM(si.quantity * si.unit_price) as revenue')
+                ->groupBy('p.id', 'p.product_name', 'p.category', 'p.image_url')
+                ->orderByDesc('revenue')
+                ->limit($limit)
+                ->get()
+                ->map(fn ($row) => [
+                    'id' => (int) $row->id,
+                    'product_name' => $row->product_name,
+                    'category' => $row->category,
+                    'store' => $storeName,
+                    'image_url' => $row->image_url,
+                    'quantity_sold' => (int) $row->quantity_sold,
+                    'revenue' => round((float) $row->revenue, 2),
+                ])
+                ->all();
+        } catch (Throwable) {
+            $this->markDown();
+            return [];
+        }
+    }
 
     public function inventoryStatus(): array
     {
-        return [
-            'inStock' => DB::table('products')->whereColumn('current_stock', '>', 'reorder_level')->count(),
-            'lowStock' => DB::table('products')->where('current_stock', '>', 0)->whereColumn('current_stock', '<=', 'reorder_level')->count(),
-            'outOfStock' => DB::table('products')->where('current_stock', '<=', 0)->count(),
-        ];
+        if ($this->guard()) {
+            return ['inStock' => 0, 'lowStock' => 0, 'outOfStock' => 0];
+        }
+
+        try {
+            return [
+                'inStock' => DB::table('products')->whereColumn('current_stock', '>', 'reorder_level')->count(),
+                'lowStock' => DB::table('products')->where('current_stock', '>', 0)->whereColumn('current_stock', '<=', 'reorder_level')->count(),
+                'outOfStock' => DB::table('products')->where('current_stock', '<=', 0)->count(),
+            ];
+        } catch (Throwable) {
+            $this->markDown();
+            return ['inStock' => 0, 'lowStock' => 0, 'outOfStock' => 0];
+        }
     }
 
     public function inventoryValue(): float
     {
-        return round((float) DB::table('products')->selectRaw('SUM(current_stock * cost_price) as v')->value('v'), 2);
+        if ($this->guard()) {
+            return 0.0;
+        }
+
+        try {
+            return round((float) DB::table('products')->selectRaw('SUM(current_stock * cost_price) as v')->value('v'), 2);
+        } catch (Throwable) {
+            $this->markDown();
+            return 0.0;
+        }
     }
 
     public function productCount(): int
     {
-        return DB::table('products')->count();
+        if ($this->guard()) {
+            return 0;
+        }
+
+        try {
+            return DB::table('products')->count();
+        } catch (Throwable) {
+            $this->markDown();
+            return 0;
+        }
     }
 
     private function period(string $key, array $daily, array $profitByDay, array $hourlyToday, Carbon $now, Carbon $lastData, Carbon $lastSync): array
@@ -111,32 +186,32 @@ class DashboardMetrics
             : ($key === 'allTime' ? 'month'
                 : ($days <= 31 ? 'day' : ($days <= 180 ? 'week' : 'month')));
 
-        $series = $granularity === 'hour'
+        $series = $this->unavailable ? [] : ($granularity === 'hour'
             ? $this->bucketHourly($hourlyToday, $lastSync)
-            : $this->bucketDaily($daily, $profitByDay, $start, $end, $granularity, $lastSync);
+            : $this->bucketDaily($daily, $profitByDay, $start, $end, $granularity, $lastSync));
 
-   return [
-    'label' => self::PERIOD_LABELS[$key],
-    'stale' => $key === 'today' && ! $lastData->isToday(),
-    'hasUnsynced' => in_array(false, array_column($series, 'synced'), true),
-    'range' => $key === 'today'
-        ? 'As of ' . $lastData->format('M j')
-        : ($start->isSameDay($end)
-            ? $start->format('M j')
-            : ($start->isSameYear($end)
-                ? $start->format('M j') . ' – ' . $end->format('M j')
-                : $start->format('M j, y') . ' – ' . $end->format('M j, y'))),
-    'rangeFull' => $key === 'today'
-        ? 'As of ' . $lastData->format('M j, Y')
-        : ($start->isSameDay($end)
-            ? $start->format('M j, Y')
-            : $start->format('M j, Y') . ' – ' . $end->format('M j, Y')),
-    'series' => $series,
-    'revenue' => round(array_sum(array_column($series, 'revenue')), 2),
-    'profit' => round(array_sum(array_column($series, 'profit')), 2),
-    'orders' => array_sum(array_column($series, 'orders')),
-    'dayCount' => max(1, $days),
-];
+        return [
+            'label' => self::PERIOD_LABELS[$key],
+            'stale' => $this->unavailable || ($key === 'today' && ! $lastData->isToday()),
+            'hasUnsynced' => $this->unavailable || in_array(false, array_column($series, 'synced'), true),
+            'range' => $key === 'today'
+                ? 'As of ' . $lastData->format('M j')
+                : ($start->isSameDay($end)
+                    ? $start->format('M j')
+                    : ($start->isSameYear($end)
+                        ? $start->format('M j') . ' – ' . $end->format('M j')
+                        : $start->format('M j, y') . ' – ' . $end->format('M j, y'))),
+            'rangeFull' => $key === 'today'
+                ? 'As of ' . $lastData->format('M j, Y')
+                : ($start->isSameDay($end)
+                    ? $start->format('M j, Y')
+                    : $start->format('M j, Y') . ' – ' . $end->format('M j, Y')),
+            'series' => $series,
+            'revenue' => round(array_sum(array_column($series, 'revenue')), 2),
+            'profit' => round(array_sum(array_column($series, 'profit')), 2),
+            'orders' => array_sum(array_column($series, 'orders')),
+            'dayCount' => max(1, $days),
+        ];
     }
 
     private function window(string $key, array $daily, Carbon $now): array
