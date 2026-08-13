@@ -51,9 +51,9 @@ import {
 import { useState } from 'react';
 import { route } from 'ziggy-js';
 
-const navGroups = [
+export const navGroups = [
     {
-        label: 'Overview',
+        label: 'Dashboard',
         items: [{ label: 'Dashboard', href: route('dashboard'), icon: LayoutDashboard, current: () => route().current('dashboard') }],
     },
     {
@@ -73,6 +73,36 @@ const navGroups = [
         ],
     },
 ] as const;
+
+export function AppSidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+    return (
+        <SidebarContent>
+            {navGroups.map((group) => (
+                <SidebarGroup key={group.label}>
+                    <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {group.items.map((item) => (
+                                <SidebarMenuItem key={item.href}>
+                                    <SidebarMenuButton
+                                        asChild
+                                        isActive={item.current()}
+                                        tooltip={item.label}
+                                    >
+                                        <Link href={item.href} onClick={onNavigate}>
+                                            <item.icon />
+                                            <span>{item.label}</span>
+                                        </Link>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            ))}
+        </SidebarContent>
+    );
+}
 
 function AppSidebar() {
     const { toggleSidebar, isMobile } = useSidebar();
@@ -125,29 +155,7 @@ function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                {navGroups.map((group) => (
-                    <SidebarGroup key={group.label}>
-                        <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                {group.items.map((item) => (
-                                    <SidebarMenuItem key={item.href}>
-                                        <SidebarMenuButton
-                                            asChild
-                                            isActive={item.current()}
-                                            tooltip={item.label}
-                                        >
-                                            <Link href={item.href}>
-                                                <item.icon />
-                                                <span>{item.label}</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                ))}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-                ))}
+                <AppSidebarNav />
             </SidebarContent>
 
             <SidebarFooter>

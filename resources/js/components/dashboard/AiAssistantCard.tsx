@@ -18,10 +18,7 @@ function AiAssistantCard() {
                 variant="outline"
                 className="absolute right-4 top-4 gap-1.5 rounded-full border-border/60 font-normal text-muted-foreground"
             >
-                <span className="relative flex size-2">
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-gold opacity-60" />
-                    <span className="relative inline-flex size-2 rounded-full bg-gold" />
-                </span>
+                <span className="size-2 rounded-full bg-gold" />
                 Online
             </Badge>
 

@@ -40,7 +40,7 @@ class SyncStatusService
         $date = Carbon::parse($last->completed_at);
 
         return [
-            'label' => 'Synced ' . $date->format('M j, Y'),
+            'label' => 'Synced ' . $date->format('M j, g:i A'),
             'detail' => 'Last sync: ' . $date->format('M j, Y g:i A')
                 . ' · ' . (int) ($last->rows_synced ?? 0) . ' rows',
         ];

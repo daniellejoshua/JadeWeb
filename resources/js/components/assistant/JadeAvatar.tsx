@@ -23,16 +23,16 @@ function JadeAvatar({ size = 'md', className }: JadeAvatarProps) {
 
     return (
         <div className={cn('relative shrink-0', dims.base, className)}>
-            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                <motion.div
-                    className={cn('rounded-full bg-gold/30 blur-lg', dims.glow)}
-                    animate={reducedMotion ? undefined : { scale: [1, 1.15, 1], opacity: [0.45, 0.8, 0.45] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                />
-            </div>
-
             {!reducedMotion && (
                 <>
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <motion.div
+                            className={cn('rounded-full bg-gold/30 blur-lg', dims.glow)}
+                            animate={{ scale: [1, 1.15, 1], opacity: [0.45, 0.8, 0.45] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        />
+                    </div>
+
                     {[0, 1].map((i) => (
                         <div
                             key={i}

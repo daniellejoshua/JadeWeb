@@ -11,14 +11,11 @@ function SyncBadge() {
             <TooltipTrigger asChild>
                 <Badge
                     variant="outline"
-                    className="hidden h-7 gap-1.5 rounded-full border-border/60 text-muted-foreground sm:inline-flex"
+                    className="inline-flex h-7 gap-1.5 rounded-full border-border/60 text-muted-foreground"
                 >
-                    <span className="relative flex size-2">
-                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-gold opacity-60" />
-                        <span className="relative inline-flex size-2 rounded-full bg-gold" />
-                    </span>
+                    <span className="size-2 rounded-full bg-gold" />
                     <RefreshCw className="size-3" />
-                    {sync.label}
+                    <span className="hidden sm:inline">{sync.label}</span>
                 </Badge>
             </TooltipTrigger>
             <TooltipContent>{sync.detail}</TooltipContent>

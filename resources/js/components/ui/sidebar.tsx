@@ -22,7 +22,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { PanelLeftIcon } from "lucide-react"
+import { MenuIcon, PanelLeftIcon, XIcon } from "lucide-react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -162,13 +162,6 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
-  const [hasOpenedMobile, setHasOpenedMobile] = React.useState(false)
-
-  React.useEffect(() => {
-    if (openMobile && !hasOpenedMobile) {
-      setHasOpenedMobile(true)
-    }
-  }, [openMobile, hasOpenedMobile])
 
   if (collapsible === "none") {
     return (
@@ -193,8 +186,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          forceMount={hasOpenedMobile}
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground fill-mode-forwards data-closed:pointer-events-none [&>button]:hidden"
+          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -263,7 +255,7 @@ function SidebarTrigger({
   onClick,
   ...props
 }: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+  const { toggleSidebar, isMobile, openMobile } = useSidebar()
 
   return (
     <Button
@@ -278,8 +270,10 @@ function SidebarTrigger({
       }}
       {...props}
     >
-      <PanelLeftIcon />
-      <span className="sr-only">Toggle Sidebar</span>
+      {isMobile ? openMobile ? <XIcon /> : <MenuIcon /> : <PanelLeftIcon />}
+      <span className="sr-only">
+        {isMobile ? (openMobile ? "Close Sidebar" : "Open Sidebar") : "Toggle Sidebar"}
+      </span>
     </Button>
   )
 }
