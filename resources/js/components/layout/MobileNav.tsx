@@ -1,6 +1,6 @@
 import { Link, router } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Search, X } from 'lucide-react';
+import { useEffect } from 'react';
 import { navGroups } from '@/Layouts/AppSidebar';
 import { cn } from '@/lib/utils';
 
@@ -22,16 +22,6 @@ const rowClass = (active: boolean) =>
     );
 
 function MobileNav({ open, onClose, onSearch }: MobileNavProps) {
-    const [view, setView] = useState<'top' | 'section'>('top');
-    const [sectionKey, setSectionKey] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (!open) {
-            setView('top');
-            setSectionKey(null);
-        }
-    }, [open]);
-
     useEffect(() => {
         if (!open) return;
 
@@ -52,8 +42,6 @@ function MobileNav({ open, onClose, onSearch }: MobileNavProps) {
         if (!open) return;
         return router.on('start', onClose);
     }, [open, onClose]);
-
-    const section = sectionKey ? navGroups.find((group) => group.label === sectionKey) : undefined;
 
     return (
         <div
@@ -82,7 +70,7 @@ function MobileNav({ open, onClose, onSearch }: MobileNavProps) {
                         type="button"
                         aria-label="Search"
                         onClick={onSearch}
-                        className="inline-flex size-10 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        className="inline-flex size-10 items-center justify-center rounded-full border border-border/60 text-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                         <Search className="size-4" />
                     </button>
@@ -90,7 +78,7 @@ function MobileNav({ open, onClose, onSearch }: MobileNavProps) {
                         type="button"
                         aria-label="Close menu"
                         onClick={onClose}
-                        className="inline-flex size-10 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        className="inline-flex size-10 items-center justify-center rounded-full border border-border/60 text-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                         <X className="size-4" />
                     </button>
@@ -113,64 +101,14 @@ function MobileNav({ open, onClose, onSearch }: MobileNavProps) {
                     transition: `transform ${open ? 300 : 150}ms ${open ? OPEN_EASE : CLOSE_EASE}`,
                 }}
             >
-                {view === 'section' && section && (
-                    <div className="flex h-12 shrink-0 items-center border-b border-border/60">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setView('top');
-                                setSectionKey(null);
-                            }}
-                            className="inline-flex h-full w-full items-center gap-1 px-2.5 text-sm font-medium transition-colors hover:bg-sidebar-accent"
-                        >
-                            <ChevronLeft className="size-5 shrink-0" />
-                            <span className="truncate">{section.label}</span>
-                        </button>
-                    </div>
-                )}
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2.5">
-                    {view === 'top' ? (
-                        <nav aria-label="Mobile menu">
-                            {navGroups.map((group, index) => {
-                                const Icon = group.items[0].icon;
-                                const direct = group.items.length === 1 ? group.items[0] : undefined;
-                                const active = group.items.some((item) => item.current());
-                                return (
-                                    <div key={group.label}>
-                                        {index > 0 && (
-                                            <div className="mx-2 my-2 h-px bg-sidebar-border" />
-                                        )}
-                                        {direct ? (
-                                            <Link
-                                                href={direct.href}
-                                                onClick={onClose}
-                                                className={rowClass(direct.current())}
-                                            >
-                                                <Icon className="size-5 shrink-0" />
-                                                <span className="truncate">{group.label}</span>
-                                            </Link>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setView('section');
-                                                    setSectionKey(group.label);
-                                                }}
-                                                className={rowClass(active)}
-                                            >
-                                                <Icon className="size-5 shrink-0" />
-                                                <span className="truncate">{group.label}</span>
-                                                <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground" />
-                                            </button>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </nav>
-                    ) : (
-                        section && (
-                            <nav aria-label={`${section.label} menu`}>
-                                {section.items.map((item) => (
+                    <nav aria-label="Mobile menu">
+                        {navGroups.map((group, groupIndex) => (
+                            <div key={group.label}>
+                                {groupIndex > 0 && (
+                                    <div className="mx-2 my-2 h-px bg-sidebar-border" />
+                                )}
+                                {group.items.map((item) => (
                                     <Link
                                         key={item.href}
                                         href={item.href}
@@ -181,9 +119,9 @@ function MobileNav({ open, onClose, onSearch }: MobileNavProps) {
                                         <span className="truncate">{item.label}</span>
                                     </Link>
                                 ))}
-                            </nav>
-                        )
-                    )}
+                            </div>
+                        ))}
+                    </nav>
                 </div>
             </div>
         </div>
