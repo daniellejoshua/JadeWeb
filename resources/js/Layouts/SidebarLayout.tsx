@@ -59,10 +59,17 @@ function TopNav({
     dateRange,
     searchOpen,
 }: Omit<SidebarLayoutProps, 'children'> & { searchOpen: boolean }) {
+    const { openMobile } = useSidebar();
 
     return (
         <>
             <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4 supports-[backdrop-filter]:md:bg-background/60 md:h-16 md:gap-4 md:px-6 md:bg-background/95 md:backdrop-blur">
+                {openMobile && (
+                    <div
+                        className="absolute inset-0 z-10 bg-background/60 backdrop-blur-md"
+                        aria-hidden="true"
+                    />
+                )}
                 <div className="flex min-w-0 items-center">
                     <div className="flex min-w-0 flex-col">
                         <h1 className="truncate text-base font-semibold tracking-tight sm:text-lg">{title}</h1>
