@@ -14,7 +14,6 @@ class Sale extends Model
         'total_amount' => 'float',
         'amount_paid' => 'float',
         'discount_amount' => 'float',
-        'is_void' => 'boolean',
     ];
     public function items():HasMany{
         return $this->hasMany(SaleItem::class,'sale_id');

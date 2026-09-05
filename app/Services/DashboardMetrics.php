@@ -106,7 +106,7 @@ class DashboardMetrics
                 ->join('products as p', 'p.id', '=', 'si.product_id')
                 ->where('s.sale_date', '>=', $this->referenceDate()->startOfMonth())
                 ->where(function ($q) {
-                    $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
+                    $q->where('s.status', 'NOT ILIKE', 'Aborted');
                 })
                 ->select('p.id', 'p.product_name', 'p.category', 'p.image_url')
                 ->selectRaw('SUM(si.quantity) as quantity_sold')
@@ -242,7 +242,7 @@ class DashboardMetrics
         return DB::table('sales')
             ->selectRaw("date_trunc('day', sale_date)::date as day, SUM(total_amount)::numeric as revenue, COUNT(*)::int as orders")
             ->where(function ($q) {
-                $q->where('is_void', '!=', true)->where('status', 'NOT ILIKE', 'Void');
+                $q->where('status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('day')->orderBy('day')
             ->get()->keyBy('day')->toArray();
@@ -255,7 +255,7 @@ class DashboardMetrics
             ->join('products as p', 'p.id', '=', 'si.product_id')
             ->selectRaw('s.sale_date::date as day, SUM(si.quantity * (si.unit_price - p.cost_price))::numeric as profit')
             ->where(function ($q) {
-                $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
+                $q->where('s.status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('day')->orderBy('day')
             ->get()->keyBy('day')->toArray();
@@ -269,7 +269,7 @@ class DashboardMetrics
             ->selectRaw("date_trunc('hour', sale_date) as hour, SUM(total_amount)::numeric as revenue, COUNT(*)::int as orders")
             ->where('sale_date', '>=', $since)
             ->where(function ($q) {
-                $q->where('is_void', '!=', true)->where('status', 'NOT ILIKE', 'Void');
+                $q->where('status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('hour')->orderBy('hour')
             ->get()->keyBy('hour')->toArray();
@@ -280,7 +280,7 @@ class DashboardMetrics
             ->selectRaw("date_trunc('hour', s.sale_date) as hour, SUM(si.quantity * (si.unit_price - p.cost_price))::numeric as profit")
             ->where('s.sale_date', '>=', $since)
             ->where(function ($q) {
-                $q->where('s.is_void', '!=', true)->where('s.status', 'NOT ILIKE', 'Void');
+                $q->where('s.status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('hour')->orderBy('hour')
             ->get()->keyBy('hour')->toArray();
