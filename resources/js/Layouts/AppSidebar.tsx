@@ -39,9 +39,9 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Boxes,
     ChevronsUpDown,
+    ClipboardList,
     LayoutDashboard,
     LogOut,
-    Package,
     Settings,
     ShoppingCart,
     Sparkles,
@@ -60,8 +60,8 @@ export const navGroups = [
         label: 'Management',
         items: [
             { label: 'Sales', href: route('sales'), icon: ShoppingCart, current: () => route().current('sales') },
-            { label: 'Products', href: route('products'), icon: Package, current: () => route().current('products') },
             { label: 'Inventory', href: route('inventory'), icon: Boxes, current: () => route().current('inventory') },
+            { label: 'Inventory Logs', href: route('inventory-logs'), icon: ClipboardList, current: () => route().current('inventory-logs') },
             { label: 'Suppliers', href: route('suppliers'), icon: Truck, current: () => route().current('suppliers') },
         ],
     },
