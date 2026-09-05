@@ -216,10 +216,10 @@ function FilterPanel({
 }) {
     return (
         <div
-            className="h-fit rounded-xl border bg-white"
+            className="flex h-full min-h-0 flex-col rounded-xl border bg-white"
             style={{ borderColor: JADE.border }}
         >
-            <div className="border-b px-5 py-4" style={{ borderColor: JADE.border }}>
+            <div className="shrink-0 border-b px-5 py-3.5" style={{ borderColor: JADE.border }}>
                 <span
                     className="text-[11px] font-semibold uppercase tracking-[0.14em]"
                     style={{ color: JADE.textSecondary }}
@@ -228,7 +228,7 @@ function FilterPanel({
                 </span>
             </div>
 
-            <div className="flex flex-col gap-5 p-5">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5">
                 <div className="flex flex-col gap-2">
                     <span className="text-xs font-medium" style={{ color: JADE.textSecondary }}>
                         Status
@@ -381,7 +381,7 @@ function Inventory() {
     const [maxPrice, setMaxPrice] = useState('');
     const [quantity, setQuantity] = useState('');
     const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
+    const PAGE_SIZE = 10;
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -404,10 +404,10 @@ function Inventory() {
         });
     }, [products, status, search, category, stock, minPrice, maxPrice, quantity]);
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const currentPage = Math.min(page, totalPages);
-    const start = (currentPage - 1) * pageSize;
-    const paged = filtered.slice(start, start + pageSize);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const paged = filtered.slice(start, start + PAGE_SIZE);
 
     function goToPage(next: number) {
         setPage(Math.max(1, Math.min(totalPages, next)));
@@ -434,7 +434,7 @@ function Inventory() {
             title="Inventory"
             subtitle="View products, stock, pricing, and availability."
         >
-            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[280px_1fr]">
+            <div className="grid grid-cols-1 items-stretch gap-5 lg:h-[calc(100vh-8.5rem)] lg:grid-cols-[280px_1fr]">
                 <FilterPanel
                     status={status}
                     onStatus={(v) => onChangeFilters(() => setStatus(v))}
@@ -457,8 +457,11 @@ function Inventory() {
                     }, []).sort()}
                 />
 
-                <div className="overflow-hidden rounded-xl border bg-white" style={{ borderColor: JADE.border }}>
-                    <div className="overflow-x-auto">
+                <div
+                    className="flex min-h-0 flex-col overflow-hidden rounded-xl border bg-white"
+                    style={{ borderColor: JADE.border }}
+                >
+                    <div className="min-h-0 flex-1 overflow-auto">
                         <table className="w-full min-w-[760px] text-sm">
                             <thead>
                                 <tr style={{ borderBottom: `1px solid ${JADE.border}` }}>
@@ -473,7 +476,7 @@ function Inventory() {
                                     ].map((header) => (
                                         <th
                                             key={header}
-                                            className="px-5 py-3.5 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
                                             style={{ color: JADE.text }}
                                         >
                                             {header}
@@ -488,7 +491,7 @@ function Inventory() {
                                         className="transition-colors hover:bg-[#FBF7EA]"
                                         style={{ borderBottom: `1px solid ${JADE.border}` }}
                                     >
-                                        <td className="px-5 py-3.5">
+                                        <td className="px-4 py-2.5">
                                             <div className="flex items-center gap-3">
                                                 {product.image_url ? (
                                                     <img
@@ -518,13 +521,13 @@ function Inventory() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-5 py-3.5" style={{ color: JADE.textSecondary }}>
+                                        <td className="px-4 py-2.5" style={{ color: JADE.textSecondary }}>
                                             {product.category ?? '—'}
                                         </td>
-                                        <td className="px-5 py-3.5" style={{ color: JADE.textSecondary }}>
+                                        <td className="px-4 py-2.5" style={{ color: JADE.textSecondary }}>
                                             {product.unit ?? '—'}
                                         </td>
-                                        <td className="px-5 py-3.5">
+                                        <td className="px-4 py-2.5">
                                             <StockCell product={product} />
                                         </td>
                                         <td className="px-5 py-3.5 tabular-nums" style={{ color: JADE.textSecondary }}>
@@ -533,7 +536,7 @@ function Inventory() {
                                         <td className="px-5 py-3.5 font-medium tabular-nums" style={{ color: JADE.text }}>
                                             {formatPeso(product.selling_price)}
                                         </td>
-                                        <td className="px-5 py-3.5">
+                                        <td className="px-4 py-2.5">
                                             <StatusBadge active={product.is_active} />
                                         </td>
                                     </tr>
@@ -554,41 +557,15 @@ function Inventory() {
                     </div>
 
                     <div
-                        className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between"
+                        className="flex shrink-0 flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
                         style={{ borderTop: `1px solid ${JADE.border}` }}
                     >
                         <span className="text-xs" style={{ color: JADE.textSecondary }}>
                             Showing {filtered.length === 0 ? 0 : start + 1} to{' '}
-                            {Math.min(start + pageSize, filtered.length)} of {filtered.length} products
+                            {Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length} products
                         </span>
 
-                        <div className="flex items-center gap-3">
-                            <Select
-                                value={String(pageSize)}
-                                onValueChange={(v) => {
-                                    setPageSize(Number(v));
-                                    setPage(1);
-                                }}
-                            >
-                                <SelectTrigger
-                                    size="sm"
-                                    className="w-fit min-w-20"
-                                    style={{ borderColor: JADE.border }}
-                                    aria-label="Rows per page"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[10, 25, 50].map((size) => (
-                                        <SelectItem key={size} value={String(size)}>
-                                            {size} / page
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <PageNumbers current={currentPage} total={totalPages} onChange={goToPage} />
-                        </div>
+                        <PageNumbers current={currentPage} total={totalPages} onChange={goToPage} />
                     </div>
                 </div>
             </div>
