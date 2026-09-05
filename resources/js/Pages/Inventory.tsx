@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select';
 import { usePage } from '@inertiajs/react';
 import type { PageProps } from '@inertiajs/core';
-import { ChevronLeft, ChevronRight, Package, RotateCcw, Search } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Package, RotateCcw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type InventoryProduct = {
@@ -104,7 +104,7 @@ function StockCell({ product }: { product: InventoryProduct }) {
     );
 }
 
-function PageNumbers({
+function PaginationControl({
     current,
     total,
     onChange,
@@ -113,67 +113,58 @@ function PageNumbers({
     total: number;
     onChange: (page: number) => void;
 }) {
-    const items: (number | '...')[] = useMemo(() => {
-        if (total <= 7) {
-            return Array.from({ length: total }, (_, i) => i + 1);
-        }
-        const pages: (number | '...')[] = [1];
-        if (current > 3) pages.push('...');
-        const start = Math.max(2, current - 1);
-        const end = Math.min(total - 1, current + 1);
-        for (let i = start; i <= end; i++) pages.push(i);
-        if (current < total - 2) pages.push('...');
-        pages.push(total);
-        return pages;
-    }, [current, total]);
-
-    const base =
-        'flex size-8 items-center justify-center rounded-lg text-sm transition-colors select-none';
+    const arrowBase =
+        'inline-flex size-8 items-center justify-center rounded-lg text-sm transition-colors disabled:pointer-events-none disabled:opacity-40';
 
     return (
         <div className="flex items-center gap-1">
             <button
                 type="button"
+                aria-label="First page"
+                disabled={current === 1}
+                onClick={() => onChange(1)}
+                className={arrowBase}
+                style={{ color: JADE.textSecondary }}
+            >
+                <ChevronFirst className="size-4" />
+            </button>
+            <button
+                type="button"
                 aria-label="Previous page"
                 disabled={current === 1}
                 onClick={() => onChange(Math.max(1, current - 1))}
-                className="inline-flex size-8 items-center justify-center rounded-lg text-sm disabled:pointer-events-none disabled:opacity-40"
+                className={arrowBase}
                 style={{ color: JADE.textSecondary }}
             >
                 <ChevronLeft className="size-4" />
             </button>
 
-            {items.map((item, index) =>
-                item === '...' ? (
-                    <span key={`gap-${index}`} className="px-1 text-sm" style={{ color: JADE.textMuted }}>
-                        …
-                    </span>
-                ) : (
-                    <button
-                        key={item}
-                        type="button"
-                        onClick={() => onChange(item)}
-                        className={base}
-                        style={
-                            item === current
-                                ? { backgroundColor: JADE.gold, color: '#fff' }
-                                : { color: JADE.textSecondary }
-                        }
-                    >
-                        {item}
-                    </button>
-                ),
-            )}
+            <span
+                className="mx-2 flex size-8 items-center justify-center rounded-lg text-sm font-semibold"
+                style={{ backgroundColor: JADE.gold, color: '#fff' }}
+            >
+                {current}
+            </span>
 
             <button
                 type="button"
                 aria-label="Next page"
                 disabled={current === total}
                 onClick={() => onChange(Math.min(total, current + 1))}
-                className="inline-flex size-8 items-center justify-center rounded-lg text-sm disabled:pointer-events-none disabled:opacity-40"
+                className={arrowBase}
                 style={{ color: JADE.textSecondary }}
             >
                 <ChevronRight className="size-4" />
+            </button>
+            <button
+                type="button"
+                aria-label="Last page"
+                disabled={current === total}
+                onClick={() => onChange(total)}
+                className={arrowBase}
+                style={{ color: JADE.textSecondary }}
+            >
+                <ChevronLast className="size-4" />
             </button>
         </div>
     );
@@ -219,18 +210,9 @@ function FilterPanel({
             className="flex h-full min-h-0 flex-col rounded-xl border bg-white"
             style={{ borderColor: JADE.border }}
         >
-            <div className="shrink-0 border-b px-5 py-3.5" style={{ borderColor: JADE.border }}>
-                <span
-                    className="text-[11px] font-semibold uppercase tracking-[0.14em]"
-                    style={{ color: JADE.textSecondary }}
-                >
-                    Filters
-                </span>
-            </div>
-
-            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5">
-                <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium" style={{ color: JADE.textSecondary }}>
+            <div className="flex min-h-0 flex-1 flex-col gap-2.5 p-4">
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs leading-none font-medium" style={{ color: JADE.textSecondary }}>
                         Status
                     </span>
                     <div
@@ -247,7 +229,15 @@ function FilterPanel({
                                     className="flex-1 rounded-none px-2 py-1.5 text-xs font-medium transition-colors"
                                     style={
                                         selected
-                                            ? { backgroundColor: JADE.gold, color: '#fff' }
+                                            ? {
+                                                  backgroundColor:
+                                                      option.value === 'active'
+                                                          ? JADE.stockHealthy
+                                                          : option.value === 'inactive'
+                                                            ? JADE.stockCritical
+                                                            : JADE.gold,
+                                                  color: '#fff',
+                                              }
                                             : { backgroundColor: '#fff', color: JADE.textSecondary }
                                     }
                                 >
@@ -258,8 +248,8 @@ function FilterPanel({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium" style={{ color: JADE.textSecondary }}>
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs leading-none font-medium" style={{ color: JADE.textSecondary }}>
                         Search
                     </span>
                     <div className="relative">
@@ -277,8 +267,8 @@ function FilterPanel({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium" style={{ color: JADE.textSecondary }}>
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs leading-none font-medium" style={{ color: JADE.textSecondary }}>
                         Category
                     </span>
                     <Select value={category} onValueChange={onCategory}>
@@ -299,8 +289,8 @@ function FilterPanel({
                     </Select>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium" style={{ color: JADE.textSecondary }}>
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs leading-none font-medium" style={{ color: JADE.textSecondary }}>
                         Stock
                     </span>
                     <Select value={stock} onValueChange={(v) => onStock(v as StockFilter)}>
@@ -317,8 +307,8 @@ function FilterPanel({
                     </Select>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium" style={{ color: JADE.textSecondary }}>
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs leading-none font-medium" style={{ color: JADE.textSecondary }}>
                         Price Range
                     </span>
                     <div className="flex items-center gap-2">
@@ -342,8 +332,8 @@ function FilterPanel({
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <span className="text-xs font-medium" style={{ color: JADE.textSecondary }}>
+                <div className="flex flex-col gap-1.5">
+                    <span className="text-xs leading-none font-medium" style={{ color: JADE.textSecondary }}>
                         Piece/Item/Quantity
                     </span>
                     <Input
@@ -355,16 +345,18 @@ function FilterPanel({
                     />
                 </div>
 
-                <Button
-                    variant="outline"
-                    type="button"
-                    onClick={onReset}
-                    className="w-full bg-white text-sm font-medium"
-                    style={{ borderColor: JADE.gold, color: JADE.gold }}
-                >
-                    <RotateCcw className="size-3.5" />
-                    Reset Filters
-                </Button>
+                <div className="mt-auto border-t pt-3" style={{ borderColor: JADE.border }}>
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={onReset}
+                        className="w-full bg-white text-sm font-medium"
+                        style={{ borderColor: JADE.gold, color: JADE.gold }}
+                    >
+                        <RotateCcw className="size-3.5" />
+                        Reset Filters
+                    </Button>
+                </div>
             </div>
         </div>
     );
@@ -381,7 +373,7 @@ function Inventory() {
     const [maxPrice, setMaxPrice] = useState('');
     const [quantity, setQuantity] = useState('');
     const [page, setPage] = useState(1);
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 7;
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -434,7 +426,7 @@ function Inventory() {
             title="Inventory"
             subtitle="View products, stock, pricing, and availability."
         >
-            <div className="grid grid-cols-1 items-stretch gap-5 lg:h-[calc(100vh-8.5rem)] lg:grid-cols-[280px_1fr]">
+            <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-[280px_1fr]">
                 <FilterPanel
                     status={status}
                     onStatus={(v) => onChangeFilters(() => setStatus(v))}
@@ -458,7 +450,7 @@ function Inventory() {
                 />
 
                 <div
-                    className="flex min-h-0 flex-col overflow-hidden rounded-xl border bg-white"
+                    className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white"
                     style={{ borderColor: JADE.border }}
                 >
                     <div className="min-h-0 flex-1 overflow-auto">
@@ -476,7 +468,7 @@ function Inventory() {
                                     ].map((header) => (
                                         <th
                                             key={header}
-                                            className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            className="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
                                             style={{ color: JADE.text }}
                                         >
                                             {header}
@@ -491,21 +483,21 @@ function Inventory() {
                                         className="transition-colors hover:bg-[#FBF7EA]"
                                         style={{ borderBottom: `1px solid ${JADE.border}` }}
                                     >
-                                        <td className="px-4 py-2.5">
-                                            <div className="flex items-center gap-3">
+                                        <td className="px-4 py-2">
+                                            <div className="flex items-center gap-2.5">
                                                 {product.image_url ? (
                                                     <img
                                                         src={product.image_url}
                                                         alt=""
-                                                        className="size-10 shrink-0 rounded-lg object-contain"
+                                                        className="size-9 shrink-0 rounded-lg object-contain"
                                                         style={{ backgroundColor: JADE.thumb }}
                                                     />
                                                 ) : (
                                                     <div
-                                                        className="flex size-10 shrink-0 items-center justify-center rounded-lg"
+                                                        className="flex size-9 shrink-0 items-center justify-center rounded-lg"
                                                         style={{ backgroundColor: JADE.thumb, color: JADE.textMuted }}
                                                     >
-                                                        <Package className="size-5" />
+                                                        <Package className="size-4" />
                                                     </div>
                                                 )}
                                                 <div className="flex flex-col">
@@ -521,13 +513,13 @@ function Inventory() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2.5" style={{ color: JADE.textSecondary }}>
+                                        <td className="px-4 py-2" style={{ color: JADE.textSecondary }}>
                                             {product.category ?? '—'}
                                         </td>
-                                        <td className="px-4 py-2.5" style={{ color: JADE.textSecondary }}>
+                                        <td className="px-4 py-2" style={{ color: JADE.textSecondary }}>
                                             {product.unit ?? '—'}
                                         </td>
-                                        <td className="px-4 py-2.5">
+                                        <td className="px-4 py-2">
                                             <StockCell product={product} />
                                         </td>
                                         <td className="px-5 py-3.5 tabular-nums" style={{ color: JADE.textSecondary }}>
@@ -536,7 +528,7 @@ function Inventory() {
                                         <td className="px-5 py-3.5 font-medium tabular-nums" style={{ color: JADE.text }}>
                                             {formatPeso(product.selling_price)}
                                         </td>
-                                        <td className="px-4 py-2.5">
+                                        <td className="px-4 py-2">
                                             <StatusBadge active={product.is_active} />
                                         </td>
                                     </tr>
@@ -557,15 +549,15 @@ function Inventory() {
                     </div>
 
                     <div
-                        className="flex shrink-0 flex-col gap-3 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
+                        className="mt-auto flex shrink-0 flex-col gap-2.5 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:px-5"
                         style={{ borderTop: `1px solid ${JADE.border}` }}
                     >
                         <span className="text-xs" style={{ color: JADE.textSecondary }}>
                             Showing {filtered.length === 0 ? 0 : start + 1} to{' '}
-                            {Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length} products
+                            {Math.min(start + PAGE_SIZE, filtered.length)} of {filtered.length} items
                         </span>
 
-                        <PageNumbers current={currentPage} total={totalPages} onChange={goToPage} />
+                        <PaginationControl current={currentPage} total={totalPages} onChange={goToPage} />
                     </div>
                 </div>
             </div>
