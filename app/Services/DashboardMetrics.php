@@ -11,8 +11,9 @@ class DashboardMetrics
 {
     private const DB_OUTAGE_KEY = 'dashboard.db_unreachable';
 
-    private const RAW_TTL= 3600;
-    private const SNAPSHOT_TTL= 3600;
+    private const RAW_TTL = 3600;
+
+    private const SNAPSHOT_TTL = 3600;
 
     private bool $unavailable = false;
 
@@ -42,25 +43,27 @@ class DashboardMetrics
             $lastSync = Carbon::parse($raw['lastSync']);
         } catch (Throwable) {
             $this->markDown();
+
             return $this->degraded($now);
         }
+
         return $this->buildPeriods($raw['daily'], $raw['profitByDay'], $raw['hourly'], $now, $lastData, $lastSync);
     }
 
-
     private function rawData(): array
-{
-    return Cache::remember('dashboard.raw.' . $this->syncId(), self::RAW_TTL, function () {
-        $daily = $this->dailyRevenueOrders();
-        return [
-            'daily' => $daily,
-            'profitByDay' => $this->dailyProfit(),
-            'hourly' => $this->hourlyForToday(),
-            'referenceDay' => $this->referenceDate($daily)->toDateTimeString(),
-            'lastSync' => $this->lastSyncDate()->toDateTimeString(),
-        ];
-    });
-}
+    {
+        return Cache::remember('dashboard.raw.'.$this->syncId(), self::RAW_TTL, function () {
+            $daily = $this->dailyRevenueOrders();
+
+            return [
+                'daily' => $daily,
+                'profitByDay' => $this->dailyProfit(),
+                'hourly' => $this->hourlyForToday(),
+                'referenceDay' => $this->referenceDate($daily)->toDateTimeString(),
+                'lastSync' => $this->lastSyncDate()->toDateTimeString(),
+            ];
+        });
+    }
 
     private function guard(): bool
     {
@@ -76,6 +79,7 @@ class DashboardMetrics
     private function degraded(Carbon $now): array
     {
         $this->unavailable = true;
+
         return $this->buildPeriods([], [], ['revenue' => [], 'profit' => []], $now, $now, $now);
     }
 
@@ -107,10 +111,9 @@ class DashboardMetrics
         return $last ? Carbon::parse($last) : Carbon::now();
     }
 
-
-    public function topProducts(int $limit=5):array
+    public function topProducts(int $limit = 5): array
     {
-        return Cache::remember('dashboard.top_products.'.$this->syncId(), self::SNAPSHOT_TTL, function () use ($limit){
+        return Cache::remember('dashboard.top_products.'.$this->syncId(), self::SNAPSHOT_TTL, function () use ($limit) {
             return $this->topProductsUnCached($limit);
         });
     }
@@ -150,17 +153,17 @@ class DashboardMetrics
                 ->all();
         } catch (Throwable) {
             $this->markDown();
+
             return [];
         }
     }
 
-    public function inventoryStatus():array
+    public function inventoryStatus(): array
     {
-        return Cache::remember('dashboard.inventory_status.' . $this->syncId(), self::SNAPSHOT_TTL, function(){
-        return $this->inventoryStatusUnCached();
+        return Cache::remember('dashboard.inventory_status.'.$this->syncId(), self::SNAPSHOT_TTL, function () {
+            return $this->inventoryStatusUnCached();
         });
     }
-
 
     public function inventoryStatusUnCached(): array
     {
@@ -176,18 +179,17 @@ class DashboardMetrics
             ];
         } catch (Throwable) {
             $this->markDown();
+
             return ['inStock' => 0, 'lowStock' => 0, 'outOfStock' => 0];
         }
     }
 
-
-    public function inventoryValue():float
+    public function inventoryValue(): float
     {
-        return Cache::remember('dashboard.inventory_value.'. $this->syncId(), self::SNAPSHOT_TTL,function(){
+        return Cache::remember('dashboard.inventory_value.'.$this->syncId(), self::SNAPSHOT_TTL, function () {
             return $this->inventoryValueUnCached();
         });
     }
-
 
     public function inventoryValueUnCached(): float
     {
@@ -199,17 +201,17 @@ class DashboardMetrics
             return round((float) DB::table('products')->selectRaw('SUM(current_stock * cost_price) as v')->value('v'), 2);
         } catch (Throwable) {
             $this->markDown();
+
             return 0.0;
         }
     }
 
-     public function productCount():int
-     {
-        return Cache::remember('dashboard.product_count.' . $this->syncId(), self::SNAPSHOT_TTL, function () {
+    public function productCount(): int
+    {
+        return Cache::remember('dashboard.product_count.'.$this->syncId(), self::SNAPSHOT_TTL, function () {
             return $this->productCountUnCached();
         });
-     }
-
+    }
 
     public function productCountUnCached(): int
     {
@@ -221,6 +223,7 @@ class DashboardMetrics
             return DB::table('products')->count();
         } catch (Throwable) {
             $this->markDown();
+
             return 0;
         }
     }
@@ -243,17 +246,17 @@ class DashboardMetrics
             'stale' => $this->unavailable || ($key === 'today' && ! $lastData->isToday()),
             'hasUnsynced' => $this->unavailable || in_array(false, array_column($series, 'synced'), true),
             'range' => $key === 'today'
-                ? 'As of ' . $lastData->format('M j')
+                ? 'As of '.$lastData->format('M j')
                 : ($start->isSameDay($end)
                     ? $start->format('M j')
                     : ($start->isSameYear($end)
-                        ? $start->format('M j') . ' – ' . $end->format('M j')
-                        : $start->format('M j, y') . ' – ' . $end->format('M j, y'))),
+                        ? $start->format('M j').' – '.$end->format('M j')
+                        : $start->format('M j, y').' – '.$end->format('M j, y'))),
             'rangeFull' => $key === 'today'
-                ? 'As of ' . $lastData->format('M j, Y')
+                ? 'As of '.$lastData->format('M j, Y')
                 : ($start->isSameDay($end)
                     ? $start->format('M j, Y')
-                    : $start->format('M j, Y') . ' – ' . $end->format('M j, Y')),
+                    : $start->format('M j, Y').' – '.$end->format('M j, Y')),
             'series' => $series,
             'revenue' => round(array_sum(array_column($series, 'revenue')), 2),
             'profit' => round(array_sum(array_column($series, 'profit')), 2),
@@ -280,8 +283,10 @@ class DashboardMetrics
             case 'allTime':
                 $days = array_column($daily, 'day');
                 $min = $days ? Carbon::parse(min($days)) : $now->copy()->startOfYear();
+
                 return [$min->copy()->startOfDay(), $now->copy()->endOfDay()];
         }
+
         return [$now->copy()->startOfDay(), $now->copy()->endOfDay()];
     }
 
@@ -294,10 +299,10 @@ class DashboardMetrics
             })
             ->groupBy('day')->orderBy('day')
             ->get()->map(fn ($r) => [
-    'day' => $r->day,
-    'revenue' => (float) $r->revenue,
-    'orders' => (int) $r->orders,
-])->keyBy('day')->toArray();
+                'day' => $r->day,
+                'revenue' => (float) $r->revenue,
+                'orders' => (int) $r->orders,
+            ])->keyBy('day')->toArray();
     }
 
     private function dailyProfit(): array
@@ -311,9 +316,9 @@ class DashboardMetrics
             })
             ->groupBy('day')->orderBy('day')
             ->get()->map(fn ($r) => [
-    'day' => $r->day,
-    'profit' => (float) $r->profit,
-])->keyBy('day')->toArray();
+                'day' => $r->day,
+                'profit' => (float) $r->profit,
+            ])->keyBy('day')->toArray();
     }
 
     private function hourlyForToday(): array
@@ -327,11 +332,11 @@ class DashboardMetrics
                 $q->where('status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('hour')->orderBy('hour')
-          ->get()->map(fn ($r) => [
-    'hour' => $r->hour,
-    'revenue' => (float) $r->revenue,
-    'orders' => (int) $r->orders,
-])->keyBy('hour')->toArray();;
+            ->get()->map(fn ($r) => [
+              'hour' => $r->hour,
+              'revenue' => (float) $r->revenue,
+              'orders' => (int) $r->orders,
+          ])->keyBy('hour')->toArray();
 
         $profit = DB::table('sale_items as si')
             ->join('sales as s', 's.id', '=', 'si.sale_id')
@@ -343,9 +348,9 @@ class DashboardMetrics
             })
             ->groupBy('hour')->orderBy('hour')
             ->get()->map(fn ($r) => [
-    'hour' => $r->hour,
-    'profit' => (float) $r->profit,
-])->keyBy('hour')->toArray();
+                'hour' => $r->hour,
+                'profit' => (float) $r->profit,
+            ])->keyBy('hour')->toArray();
 
         return ['revenue' => $revenue, 'profit' => $profit];
     }
@@ -370,15 +375,18 @@ class DashboardMetrics
 
         foreach ($daily as $dayKey => $row) {
             $day = Carbon::parse($dayKey);
-            if ($day->lt($start) || $day->gt($end)) continue;
+            if ($day->lt($start) || $day->gt($end)) {
+                continue;
+            }
 
             $key = $this->bucketKey($this->bucketStart($day, $granularity), $granularity);
-            $buckets[$key]['revenue'] += (float) $row->revenue;
-            $buckets[$key]['orders'] += (int) $row->orders;
-            $buckets[$key]['profit'] += (float) ($profitByDay[$dayKey]->profit ?? 0);
+            $buckets[$key]['revenue'] += (float) $row['revenue'];
+            $buckets[$key]['orders'] += (int) $row['orders'];
+            $buckets[$key]['profit'] += (float) ($profitByDay[$dayKey]['profit'] ?? 0);
         }
 
         ksort($buckets);
+
         return array_map(fn ($b) => [
             'date' => $b['date'],
             'revenue' => round($b['revenue'], 2),
@@ -393,10 +401,10 @@ class DashboardMetrics
     {
         return array_map(fn ($hour, $row) => [
             'date' => Carbon::parse($hour)->format('g A'),
-            'revenue' => round((float) $row->revenue, 2),
-            'expense' => round((float) $row->revenue - (float) ($hourlyToday['profit'][$hour]->profit ?? 0), 2),
+            'revenue' => round((float) $row['revenue'], 2),
+            'expense' => round((float) $row['revenue'] - (float) ($hourlyToday['profit'][$hour]['profit'] ?? 0), 2),
             'profit' => round((float) ($hourlyToday['profit'][$hour]->profit ?? 0), 2),
-            'orders' => (int) $row->orders,
+            'orders' => (int) $row['orders'],
             'synced' => Carbon::parse($hour)->lte($lastSync),
         ], array_keys($hourlyToday['revenue']), array_values($hourlyToday['revenue']));
     }
@@ -432,8 +440,9 @@ class DashboardMetrics
 
     // CACHING
 
-    private function syncId(): string{
-        return Cache::remember('dashboard.sync_id',60,function (){
+    private function syncId(): string
+    {
+        return Cache::remember('dashboard.sync_id', 60, function () {
             return (string) (DB::table('sync_log')->orderByDesc('id')->value('id') ?? 'none');
         });
     }
