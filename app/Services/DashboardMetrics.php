@@ -11,6 +11,9 @@ class DashboardMetrics
 {
     private const DB_OUTAGE_KEY = 'dashboard.db_unreachable';
 
+    private const RAW_TTL= 3600;
+    private const SNAPSHOT_TTL= 3600;
+
     private bool $unavailable = false;
 
     public const PERIOD_KEYS = ['today', 'last7', 'last30', 'thisMonth', 'lastMonth', 'thisYear', 'allTime'];
@@ -34,18 +37,30 @@ class DashboardMetrics
         }
 
         try {
-            $daily = $this->dailyRevenueOrders();
-            $lastData = $this->referenceDate($daily);
-            $lastSync = $this->lastSyncDate();
-            $profitByDay = $this->dailyProfit();
-            $hourlyToday = $this->hourlyForToday();
+            $raw = $this->rawData();
+            $lastData = Carbon::parse($raw['referenceDay']);
+            $lastSync = Carbon::parse($raw['lastSync']);
         } catch (Throwable) {
             $this->markDown();
             return $this->degraded($now);
         }
-
-        return $this->buildPeriods($daily, $profitByDay, $hourlyToday, $now, $lastData, $lastSync);
+        return $this->buildPeriods($raw['daily'], $raw['profitByDay'], $raw['hourly'], $now, $lastData, $lastSync);
     }
+
+
+    private function rawData(): array
+{
+    return Cache::remember('dashboard.raw.' . $this->syncId(), self::RAW_TTL, function () {
+        $daily = $this->dailyRevenueOrders();
+        return [
+            'daily' => $daily,
+            'profitByDay' => $this->dailyProfit(),
+            'hourly' => $this->hourlyForToday(),
+            'referenceDay' => $this->referenceDate($daily)->toDateTimeString(),
+            'lastSync' => $this->lastSyncDate()->toDateTimeString(),
+        ];
+    });
+}
 
     private function guard(): bool
     {
@@ -92,7 +107,15 @@ class DashboardMetrics
         return $last ? Carbon::parse($last) : Carbon::now();
     }
 
-    public function topProducts(int $limit = 5): array
+
+    public function topProducts(int $limit=5):array
+    {
+        return Cache::remember('dashboard.top_products.'.$this->syncId(), self::SNAPSHOT_TTL, function () use ($limit){
+            return $this->topProductsUnCached($limit);
+        });
+    }
+
+    public function topProductsUnCached(int $limit = 5): array
     {
         if ($this->guard()) {
             return [];
@@ -131,7 +154,15 @@ class DashboardMetrics
         }
     }
 
-    public function inventoryStatus(): array
+    public function inventoryStatus():array
+    {
+        return Cache::remember('dashboard.inventory_status.' . $this->syncId(), self::SNAPSHOT_TTL, function(){
+        return $this->inventoryStatusUnCached();
+        });
+    }
+
+
+    public function inventoryStatusUnCached(): array
     {
         if ($this->guard()) {
             return ['inStock' => 0, 'lowStock' => 0, 'outOfStock' => 0];
@@ -149,7 +180,16 @@ class DashboardMetrics
         }
     }
 
-    public function inventoryValue(): float
+
+    public function inventoryValue():float
+    {
+        return Cache::remember('dashboard.inventory_value.'. $this->syncId(), self::SNAPSHOT_TTL,function(){
+            return $this->inventoryValueUnCached();
+        });
+    }
+
+
+    public function inventoryValueUnCached(): float
     {
         if ($this->guard()) {
             return 0.0;
@@ -163,7 +203,15 @@ class DashboardMetrics
         }
     }
 
-    public function productCount(): int
+     public function productCount():int
+     {
+        return Cache::remember('dashboard.product_count.' . $this->syncId(), self::SNAPSHOT_TTL, function () {
+            return $this->productCountUnCached();
+        });
+     }
+
+
+    public function productCountUnCached(): int
     {
         if ($this->guard()) {
             return 0;
@@ -366,5 +414,13 @@ class DashboardMetrics
             'hour' => $start->format('g A'),
             default => $start->format('M j'),
         };
+    }
+
+    // CACHING
+
+    private function syncId(): string{
+        return Cache::remember('dashboard.sync_id',60,function (){
+            return (string) (DB::table('sync_log')->orderByDesc('id')->value('id') ?? 'none');
+        });
     }
 }
