@@ -293,7 +293,11 @@ class DashboardMetrics
                 $q->where('status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('day')->orderBy('day')
-            ->get()->keyBy('day')->toArray();
+            ->get()->map(fn ($r) => [
+    'day' => $r->day,
+    'revenue' => (float) $r->revenue,
+    'orders' => (int) $r->orders,
+])->keyBy('day')->toArray();
     }
 
     private function dailyProfit(): array
@@ -306,7 +310,10 @@ class DashboardMetrics
                 $q->where('s.status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('day')->orderBy('day')
-            ->get()->keyBy('day')->toArray();
+            ->get()->map(fn ($r) => [
+    'day' => $r->day,
+    'profit' => (float) $r->profit,
+])->keyBy('day')->toArray();
     }
 
     private function hourlyForToday(): array
@@ -320,7 +327,11 @@ class DashboardMetrics
                 $q->where('status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('hour')->orderBy('hour')
-            ->get()->keyBy('hour')->toArray();
+          ->get()->map(fn ($r) => [
+    'hour' => $r->hour,
+    'revenue' => (float) $r->revenue,
+    'orders' => (int) $r->orders,
+])->keyBy('hour')->toArray();;
 
         $profit = DB::table('sale_items as si')
             ->join('sales as s', 's.id', '=', 'si.sale_id')
@@ -331,7 +342,10 @@ class DashboardMetrics
                 $q->where('s.status', 'NOT ILIKE', 'Aborted');
             })
             ->groupBy('hour')->orderBy('hour')
-            ->get()->keyBy('hour')->toArray();
+            ->get()->map(fn ($r) => [
+    'hour' => $r->hour,
+    'profit' => (float) $r->profit,
+])->keyBy('hour')->toArray();
 
         return ['revenue' => $revenue, 'profit' => $profit];
     }
