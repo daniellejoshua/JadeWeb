@@ -12,6 +12,12 @@ import { usePage } from '@inertiajs/react';
 import type { PageProps } from '@inertiajs/core';
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Package, RotateCcw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 type InventoryProduct = {
     id: number;
@@ -101,6 +107,18 @@ function StockCell({ product }: { product: InventoryProduct }) {
         >
             {product.current_stock}
         </span>
+    );
+}
+
+function CellText({ text, className, maxLen = 12 }: { text: string; className?: string; maxLen?: number }) {
+    const display = text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <span className={cn('block whitespace-nowrap', className)}>{display}</span>
+            </TooltipTrigger>
+            <TooltipContent>{text}</TooltipContent>
+        </Tooltip>
     );
 }
 
@@ -501,12 +519,11 @@ function Inventory() {
                                                     </div>
                                                 )}
                                                 <div className="flex flex-col">
-                                                    <span
-                                                        className="font-semibold whitespace-nowrap"
-                                                        style={{ color: JADE.text }}
-                                                    >
-                                                        {product.product_name}
-                                                    </span>
+                                                    <CellText
+                                                        text={product.product_name}
+                                                        maxLen={28}
+                                                        className="font-semibold"
+                                                    />
                                                     <span className="text-xs" style={{ color: JADE.textMuted }}>
                                                         Code: {product.product_code}
                                                     </span>
@@ -514,18 +531,18 @@ function Inventory() {
                                             </div>
                                         </td>
                                         <td className="px-4 py-2" style={{ color: JADE.textSecondary }}>
-                                            {product.category ?? '—'}
+                                            <CellText text={product.category ?? '—'} />
                                         </td>
                                         <td className="px-4 py-2" style={{ color: JADE.textSecondary }}>
-                                            {product.unit ?? '—'}
+                                            <CellText text={product.unit ?? '—'} maxLen={4} />
                                         </td>
                                         <td className="px-4 py-2">
                                             <StockCell product={product} />
                                         </td>
-                                        <td className="px-5 py-3.5 tabular-nums" style={{ color: JADE.textSecondary }}>
+                                        <td className="px-4 py-2 tabular-nums" style={{ color: JADE.textSecondary }}>
                                             {formatPeso(product.cost_price)}
                                         </td>
-                                        <td className="px-5 py-3.5 font-medium tabular-nums" style={{ color: JADE.text }}>
+                                        <td className="px-4 py-2 font-medium tabular-nums" style={{ color: JADE.text }}>
                                             {formatPeso(product.selling_price)}
                                         </td>
                                         <td className="px-4 py-2">
