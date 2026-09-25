@@ -16,6 +16,7 @@ import { Toaster } from '@/components/ui/sonner';
 import AppSidebar from '@/Layouts/AppSidebar';
 import MobileNav from '@/components/layout/MobileNav';
 import UserMenu from '@/components/layout/UserMenu';
+import JadeChatWidget from '@/components/assistant/JadeChatWidget';
 import SyncBadge from '@/components/dashboard/SyncBadge';
 import { Bell, Search } from 'lucide-react';
 import { useEffect, useState, type PropsWithChildren, type ReactNode } from 'react';
@@ -151,7 +152,8 @@ function SidebarShell({ title, subtitle, dateRange, children }: SidebarLayoutPro
                     setSearchOpen(true);
                 }}
             />
-            <Toaster richColors position="bottom-right" />
+            <JadeChatWidget />
+            <Toaster richColors position="top-right" />
         </>
     );
 }

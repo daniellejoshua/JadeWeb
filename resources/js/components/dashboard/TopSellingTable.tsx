@@ -18,7 +18,7 @@ function TopSellingTable({ products }: { products: TopProduct[] }) {
         <DashboardCard>
             <CardHeader>
                 <CardTitle>Top Selling Products</CardTitle>
-                <CardDescription>Best performers this month</CardDescription>
+                <CardDescription>Completed-sales leaders this month</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
                 <Table>
@@ -31,6 +31,13 @@ function TopSellingTable({ products }: { products: TopProduct[] }) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
+                        {products.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-28 text-center text-sm text-muted-foreground">
+                                    No completed product sales are available for this month.
+                                </TableCell>
+                            </TableRow>
+                        )}
                         {products.map((product) => (
                             <TableRow key={product.id}>
                                 <TableCell>

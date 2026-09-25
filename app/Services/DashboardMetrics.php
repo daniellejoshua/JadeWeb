@@ -113,7 +113,7 @@ class DashboardMetrics
 
     public function topProducts(int $limit = 5): array
     {
-        return Cache::remember('dashboard.top_products.'.$this->syncId(), self::SNAPSHOT_TTL, function () use ($limit) {
+        return Cache::remember('dashboard.top_products.'.$this->syncId().'.'.$limit, self::SNAPSHOT_TTL, function () use ($limit) {
             return $this->topProductsUnCached($limit);
         });
     }
@@ -131,14 +131,14 @@ class DashboardMetrics
                 ->join('sales as s', 's.id', '=', 'si.sale_id')
                 ->join('products as p', 'p.id', '=', 'si.product_id')
                 ->where('s.sale_date', '>=', $this->referenceDate()->startOfMonth())
-                ->where(function ($q) {
-                    $q->where('s.status', 'NOT ILIKE', 'Aborted');
-                })
+                ->whereRaw('LOWER(s.status) = ?', ['completed'])
                 ->select('p.id', 'p.product_name', 'p.category', 'p.image_url')
                 ->selectRaw('SUM(si.quantity) as quantity_sold')
                 ->selectRaw('SUM(si.quantity * si.unit_price) as revenue')
                 ->groupBy('p.id', 'p.product_name', 'p.category', 'p.image_url')
                 ->orderByDesc('revenue')
+                ->orderByDesc('quantity_sold')
+                ->orderBy('p.product_name')
                 ->limit($limit)
                 ->get()
                 ->map(fn ($row) => [
@@ -333,10 +333,10 @@ class DashboardMetrics
             })
             ->groupBy('hour')->orderBy('hour')
             ->get()->map(fn ($r) => [
-              'hour' => $r->hour,
-              'revenue' => (float) $r->revenue,
-              'orders' => (int) $r->orders,
-          ])->keyBy('hour')->toArray();
+                'hour' => $r->hour,
+                'revenue' => (float) $r->revenue,
+                'orders' => (int) $r->orders,
+            ])->keyBy('hour')->toArray();
 
         $profit = DB::table('sale_items as si')
             ->join('sales as s', 's.id', '=', 'si.sale_id')

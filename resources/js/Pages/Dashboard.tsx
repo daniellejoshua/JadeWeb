@@ -1,6 +1,5 @@
 import SidebarLayout from '@/Layouts/SidebarLayout';
 import { usePage } from '@inertiajs/react';
-import AiAssistantCard from '@/components/dashboard/AiAssistantCard';
 import InventoryDonut from '@/components/dashboard/InventoryDonut';
 import PerformanceChart from '@/components/dashboard/PerformanceChart';
 import StatCard from '@/components/dashboard/StatCard';
@@ -113,7 +112,6 @@ function Dashboard() {
                     </div>
 
                     <InventoryDonut status={inventoryStatus} />
-                    <AiAssistantCard />
                 </div>
             </div>
         </SidebarLayout>

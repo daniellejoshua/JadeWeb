@@ -6,6 +6,38 @@
 @import "@fontsource-variable/geist-mono";
 @plugin "@tailwindcss/forms";
 
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/poppins-400.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/poppins-500.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/poppins-600.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Poppins';
+    src: url('../fonts/poppins-700.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
@@ -20,6 +52,10 @@
     --typeset-size: 15px;
     --typeset-leading: 1.75;
     --typeset-flow: 1.25em;
+}
+
+.jade-assistant {
+    font-family: 'Poppins', var(--font-geist), sans-serif;
 }
 
 @theme inline {

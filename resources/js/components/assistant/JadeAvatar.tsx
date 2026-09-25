@@ -1,9 +1,8 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { Sparkle, Sparkles } from 'lucide-react';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
-const JADE_WEBP = '/jadeAssistantAnimation/idle/jade.webp';
+const JADE_FRAME = '/jadeAssistantAnimation/JadeAIAssistant.png';
 
 const sizeMap = {
     sm: { base: 'size-8', glow: 'size-12', ring: 'size-10', orbit: 'size-14', icon: 'size-3.5', radius: 'rounded-lg' },
@@ -18,7 +17,6 @@ type JadeAvatarProps = {
 
 function JadeAvatar({ size = 'md', className }: JadeAvatarProps) {
     const reducedMotion = useReducedMotion();
-    const [imgFailed, setImgFailed] = useState(false);
     const dims = sizeMap[size];
 
     return (
@@ -64,19 +62,15 @@ function JadeAvatar({ size = 'md', className }: JadeAvatarProps) {
             )}
 
             <div className={cn('absolute inset-0 overflow-hidden', dims.radius)}>
-                {imgFailed ? (
-                    <div className="flex size-full items-center justify-center bg-gradient-to-br from-gold/30 to-gold/10 text-gold-strong">
-                        <Sparkles className={dims.icon} />
-                    </div>
-                ) : (
+                <div className="flex size-full items-center justify-center bg-gradient-to-br from-gold/30 to-gold/10 text-gold-strong">
+                    <Sparkles className={cn('absolute', dims.icon)} />
                     <img
-                        src={JADE_WEBP}
+                        src={JADE_FRAME}
                         alt="Jade, your AI assistant"
                         draggable={false}
-                        onError={() => setImgFailed(true)}
-                        className="size-full object-contain"
+                        className="relative size-full object-contain"
                     />
-                )}
+                </div>
             </div>
         </div>
     );
