@@ -91,7 +91,7 @@ function StatusBadge({ active }: { active: boolean }) {
         : { backgroundColor: JADE.thumb, color: JADE.textMuted };
     return (
         <span
-            className="inline-flex h-5 items-center rounded-full px-2.5 text-xs font-medium"
+            className="inline-flex h-5 max-w-full items-center rounded-full px-1.5 text-[10px] font-medium"
             style={style}
         >
             {active ? 'Active' : 'Inactive'}
@@ -110,12 +110,11 @@ function StockCell({ product }: { product: InventoryProduct }) {
     );
 }
 
-function CellText({ text, className, maxLen = 12 }: { text: string; className?: string; maxLen?: number }) {
-    const display = text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
+function CellText({ text, className }: { text: string; className?: string }) {
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <span className={cn('block whitespace-nowrap', className)}>{display}</span>
+                <span className={cn('block truncate', className)}>{text}</span>
             </TooltipTrigger>
             <TooltipContent>{text}</TooltipContent>
         </Tooltip>
@@ -444,7 +443,7 @@ function Inventory() {
             title="Inventory"
             subtitle="View products, stock, pricing, and availability."
         >
-            <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-[280px_1fr]">
+            <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 lg:grid-cols-[260px_minmax(0,1fr)]">
                 <FilterPanel
                     status={status}
                     onStatus={(v) => onChangeFilters(() => setStatus(v))}
@@ -468,11 +467,20 @@ function Inventory() {
                 />
 
                 <div
-                    className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white"
+                    className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border bg-white"
                     style={{ borderColor: JADE.border }}
                 >
-                    <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="w-full min-w-[760px] text-sm">
+                    <div className="min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden lg:overflow-x-hidden">
+                        <table className="w-full min-w-[680px] table-fixed text-xs lg:min-w-0">
+                            <colgroup>
+                                <col className="w-[30%]" />
+                                <col className="w-[16%]" />
+                                <col className="w-[8%]" />
+                                <col className="w-[9%]" />
+                                <col className="w-[13%]" />
+                                <col className="w-[13%]" />
+                                <col className="w-[11%]" />
+                            </colgroup>
                             <thead>
                                 <tr style={{ borderBottom: `1px solid ${JADE.border}` }}>
                                     {[
@@ -486,7 +494,7 @@ function Inventory() {
                                     ].map((header) => (
                                         <th
                                             key={header}
-                                            className="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap"
+                                            className="truncate px-2.5 py-2 text-left text-[10px] font-semibold uppercase tracking-wide"
                                             style={{ color: JADE.text }}
                                         >
                                             {header}
@@ -501,53 +509,57 @@ function Inventory() {
                                         className="transition-colors hover:bg-[#FBF7EA]"
                                         style={{ borderBottom: `1px solid ${JADE.border}` }}
                                     >
-                                        <td className="px-4 py-2">
-                                            <div className="flex items-center gap-2.5">
+                                        <td className="overflow-hidden px-2.5 py-1.5">
+                                            <div className="flex min-w-0 items-center gap-2">
                                                 {product.image_url ? (
                                                     <img
                                                         src={product.image_url}
                                                         alt=""
-                                                        className="size-9 shrink-0 rounded-lg object-contain"
+                                                        className="size-8 shrink-0 rounded-lg object-contain"
                                                         style={{ backgroundColor: JADE.thumb }}
                                                     />
                                                 ) : (
                                                     <div
-                                                        className="flex size-9 shrink-0 items-center justify-center rounded-lg"
+                                                        className="flex size-8 shrink-0 items-center justify-center rounded-lg"
                                                         style={{ backgroundColor: JADE.thumb, color: JADE.textMuted }}
                                                     >
                                                         <Package className="size-4" />
                                                     </div>
                                                 )}
-                                                <div className="flex flex-col">
+                                                <div className="flex min-w-0 flex-col">
                                                     <CellText
                                                         text={product.product_name}
-                                                        maxLen={28}
                                                         className="font-semibold"
                                                     />
-                                                    <span className="text-xs" style={{ color: JADE.textMuted }}>
+                                                    <span className="truncate text-[11px]" style={{ color: JADE.textMuted }}>
                                                         Code: {product.product_code}
                                                     </span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2" style={{ color: JADE.textSecondary }}>
+                                        <td className="px-2.5 py-1.5" style={{ color: JADE.textSecondary }}>
                                             <CellText text={product.category ?? '—'} />
                                         </td>
-                                        <td className="px-4 py-2" style={{ color: JADE.textSecondary }}>
-                                            <CellText text={product.unit ?? '—'} maxLen={4} />
+                                        <td className="px-2.5 py-1.5" style={{ color: JADE.textSecondary }}>
+                                            <CellText text={product.unit ?? '—'} />
                                         </td>
-                                        <td className="px-4 py-2">
+                                        <td className="px-2.5 py-1.5">
                                             <StockCell product={product} />
                                         </td>
-                                        <td className="px-4 py-2 tabular-nums" style={{ color: JADE.textSecondary }}>
-                                            {formatPeso(product.cost_price)}
+                                        <td className="truncate px-2.5 py-1.5 tabular-nums" style={{ color: JADE.textSecondary }}>
+                                            <span title={formatPeso(product.cost_price)}>{formatPeso(product.cost_price)}</span>
                                         </td>
-                                        <td className="px-4 py-2 font-medium tabular-nums" style={{ color: JADE.text }}>
-                                            {formatPeso(product.selling_price)}
+                                        <td className="truncate px-2.5 py-1.5 font-medium tabular-nums" style={{ color: JADE.text }}>
+                                            <span title={formatPeso(product.selling_price)}>{formatPeso(product.selling_price)}</span>
                                         </td>
-                                        <td className="px-4 py-2">
+                                        <td className="px-2.5 py-1.5">
                                             <StatusBadge active={product.is_active} />
                                         </td>
+                                    </tr>
+                                ))}
+                                {Array.from({ length: PAGE_SIZE - paged.length }).map((_, i) => (
+                                    <tr key={`empty-${i}`} style={{ height: 44 }}>
+                                        <td colSpan={7} />
                                     </tr>
                                 ))}
                                 {paged.length === 0 && (

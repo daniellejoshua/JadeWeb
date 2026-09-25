@@ -9,6 +9,8 @@ use Throwable;
 
 class SyncStatusService
 {
+    private const CACHE_TTL_MINUTES = 15;
+
     public function get(): array
     {
         if ($cached = Cache::get('sync.status')) {
@@ -28,10 +30,10 @@ class SyncStatusService
             $payload = ['label' => 'Sync unavailable', 'detail' => 'Could not reach the database'];
         }
 
-        Cache::put('sync.status', $payload, now()->addMinute());
+        Cache::put('sync.status', $payload, now()->addMinutes(self::CACHE_TTL_MINUTES));
     }
 
-    private function build(object|null $last): array
+    private function build(?object $last): array
     {
         if (! $last || ! $last->completed_at) {
             return ['label' => 'Not synced yet', 'detail' => 'No completed sync found'];
@@ -40,9 +42,9 @@ class SyncStatusService
         $date = Carbon::parse($last->completed_at);
 
         return [
-            'label' => 'Synced ' . $date->format('M j, g:i A'),
-            'detail' => 'Last sync: ' . $date->format('M j, Y g:i A')
-                . ' · ' . (int) ($last->rows_synced ?? 0) . ' rows',
+            'label' => 'Synced '.$date->format('M j, g:i A'),
+            'detail' => 'Last sync: '.$date->format('M j, Y g:i A')
+                .' · '.(int) ($last->rows_synced ?? 0).' rows',
         ];
     }
 }

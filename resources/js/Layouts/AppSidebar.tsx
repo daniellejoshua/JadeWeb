@@ -59,7 +59,7 @@ export const navGroups = [
     {
         label: 'Management',
         items: [
-            { label: 'Sales', href: route('sales'), icon: ShoppingCart, current: () => route().current('sales') },
+            { label: 'Sales Record', href: route('sales'), icon: ShoppingCart, current: () => route().current('sales') },
             { label: 'Inventory', href: route('inventory'), icon: Boxes, current: () => route().current('inventory') },
             { label: 'Inventory Logs', href: route('inventory-logs'), icon: ClipboardList, current: () => route().current('inventory-logs') },
             { label: 'Suppliers', href: route('suppliers'), icon: Truck, current: () => route().current('suppliers') },

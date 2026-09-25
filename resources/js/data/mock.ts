@@ -21,16 +21,6 @@ import {
 /* Types                                                               */
 /* ------------------------------------------------------------------ */
 
-export type Supplier = {
-    id: number;
-    supplier_code: string;
-    supplier_name: string;
-    contact_person: string;
-    phone: string;
-    email: string;
-    is_active: boolean;
-};
-
 export type Product = {
     id: number;
     product_code: string;
@@ -112,17 +102,6 @@ export type ChatMessage = {
 /* ------------------------------------------------------------------ */
 /* Data                                                                */
 /* ------------------------------------------------------------------ */
-
-export const suppliers: Supplier[] = [
-    { id: 1, supplier_code: 'SUP-001', supplier_name: 'Mercury Drug Distributors', contact_person: 'Alma Reyes', phone: '0917-555-0101', email: 'orders@mercurydist.ph', is_active: true },
-    { id: 2, supplier_code: 'SUP-002', supplier_name: 'Zuellig Pharma PH', contact_person: 'Marco Tan', phone: '0918-555-0102', email: 'sales@zuelligph.com', is_active: true },
-    { id: 3, supplier_code: 'SUP-003', supplier_name: 'MedExpress Supply Co.', contact_person: 'Grace Lim', phone: '0919-555-0103', email: 'contact@medexpress.co', is_active: true },
-    { id: 4, supplier_code: 'SUP-004', supplier_name: 'Unilab Distribution', contact_person: 'Jose Cruz', phone: '0920-555-0104', email: 'acct@unilab.com.ph', is_active: true },
-    { id: 5, supplier_code: 'SUP-005', supplier_name: 'Nature\'s Blend Trading', contact_person: 'Rita Santos', phone: '0921-555-0105', email: 'sales@naturesblend.ph', is_active: true },
-    { id: 6, supplier_code: 'SUP-006', supplier_name: 'CarePlus Medical Equipment', contact_person: 'Kevin Uy', phone: '0922-555-0106', email: 'info@careplusmed.com', is_active: false },
-    { id: 7, supplier_code: 'SUP-007', supplier_name: 'HealthFirst Pharma', contact_person: 'Diana Ramos', phone: '0923-555-0107', email: 'orders@healthfirst.ph', is_active: true },
-    { id: 8, supplier_code: 'SUP-008', supplier_name: 'Pampanga Medical Supply', contact_person: 'Ben Navarro', phone: '0924-555-0108', email: 'sales@pampangamed.com', is_active: true },
-];
 
 export const products: Product[] = [
     { id: 1, product_code: 'MED-001', product_name: 'Paracetamol 500mg (Bioflu)', category: 'Medicines', unit: 'BOX', current_stock: 148, reorder_level: 40, has_expiry: true, expiry_date: '2026-12-30', cost_price: 180.5, selling_price: 240.0, wholesale_price: 200.0, supplier_id: 1, store: 'Jade Clinic', image_url: null, is_active: true },

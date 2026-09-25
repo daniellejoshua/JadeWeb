@@ -22,6 +22,8 @@ class SupabaseGuard implements StatefulGuard
 {
     use GuardHelpers;
 
+    private const ALLOWED_ROLES = ['Admin', 'Administrator', 'Manager'];
+
     private string $sessionKey = 'supabase_auth';
 
     private bool $loggedOut = false;
@@ -43,7 +45,7 @@ class SupabaseGuard implements StatefulGuard
             return false;
         }
         $role = $tokens['user']['user_metadata']['role'] ?? null;
-        if ($role !== 'Admin') {
+        if (! in_array($role, self::ALLOWED_ROLES, true)) {
             return false;
         }
 
@@ -123,9 +125,9 @@ class SupabaseGuard implements StatefulGuard
     public function validate(array $credentials = []): bool
     {
         try {
-            $this->supabase->signIn($credentials['email'], $credentials['password']);
+            $tokens = $this->supabase->signIn($credentials['email'], $credentials['password']);
 
-            return true;
+            return in_array($tokens['user']['user_metadata']['role'] ?? null, self::ALLOWED_ROLES, true);
         } catch (RuntimeException) {
             return false;
         }
