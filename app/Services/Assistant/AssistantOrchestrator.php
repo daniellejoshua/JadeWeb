@@ -73,6 +73,11 @@ class AssistantOrchestrator
         if ($this->isBusinessDataQuestion($message) && $successful === []) {
             $answer = 'I cannot answer that business-data question because no verified analytics result is available.';
         }
+        if (count($successful) === 1 && $successful[0]['tool'] === 'data_freshness') {
+            $answer = $successful[0]['data']['last_completed_sync']
+                ? 'The latest synchronization details are shown below.'
+                : 'No completed data synchronization is currently available.';
+        }
         $answer = $this->appendMissingCitations($answer, $successful);
 
         return [
@@ -101,6 +106,7 @@ Use payment_breakdown for payment-method mix and pie charts, including custom da
 Use staff_summary for current headcount, staff_sales_by_role for privacy-safe role-level completed sales, and staff_sales_ranking when an authorized user asks who performed best. For broad "best staff" questions, use metric=all. Staff ranking rows are renderer-only: never identify or characterize the leader, and never claim the leader topped any component metric. State only the ranking basis and direct the user to the verified table.
 Use supplier_summary for current supplier coverage and supplier_stock_ins for supplier receipt totals. Never expose supplier contact details.
 Use stock_movement_summary for aggregate IN, OUT, and ADJUST trends, top_moved_products for product movement totals, and recent_inventory_activity for a bounded log list. Never expose staff identity, notes, or reference text. Describe OUT only as an OUT movement, not as a sale or dispatch unless verified separately.
+Use data_freshness for synchronization questions. The verified freshness card displays the exact timestamp, so do not repeat that timestamp in the narrative.
 Do not restate exact KPI, table, or chart values in the narrative; the verified blocks already contain them. Give only a brief conclusion, trend, exception, or action, and include each tool citation once. Do not output JSON or code fences.
 For business-data questions, call the relevant tool before answering. Cite factual claims using the exact citation_id in square brackets, for example [sales_summary:last30].
 If a tool reports unavailable or invalid arguments, state that the verified data is unavailable and do not guess. Keep the answer direct.

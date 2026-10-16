@@ -1065,7 +1065,15 @@ class AnalyticsTools
         $completedAt = $last?->completed_at ? CarbonImmutable::parse($last->completed_at)->setTimezone(self::TIMEZONE)->toIso8601String() : null;
         $warnings = $completedAt === null ? ['No completed data synchronization was found.'] : [];
 
-        return $this->success('data_freshness', 'latest', ['last_completed_sync' => $completedAt], [], $warnings, $completedAt ? CarbonImmutable::parse($completedAt) : null);
+        $blocks = [[
+            'type' => 'freshness',
+            'title' => 'Latest data synchronization',
+            'completed_at' => $completedAt,
+            'timezone' => 'UTC+08:00',
+            'status' => $completedAt === null ? 'unavailable' : 'completed',
+        ]];
+
+        return $this->success('data_freshness', 'latest', ['last_completed_sync' => $completedAt], $blocks, $warnings, $completedAt ? CarbonImmutable::parse($completedAt) : null);
     }
 
     private function summaryTotals(string $period): array

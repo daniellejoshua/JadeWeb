@@ -30,7 +30,7 @@ function Dashboard() {
 
     const [period, setPeriod] = useState<PeriodKey>('last30');
     const current: PeriodData = periods[period];
-    const notSynced = current.stale || current.hasUnsynced;
+    const notSynced = current.stale || current.fullyUnsynced;
 
     const fullValue = (value: number) =>
         formatCurrency(value) !== formatCompactCurrency(value)

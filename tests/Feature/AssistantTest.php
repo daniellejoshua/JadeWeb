@@ -349,6 +349,40 @@ class AssistantTest extends TestCase
         $this->assertSame('unavailable', $invalid['status']);
     }
 
+    public function test_data_freshness_returns_a_formatted_renderer_block(): void
+    {
+        $result = app(AnalyticsTools::class)->execute('data_freshness', []);
+
+        $this->assertSame('ok', $result['status']);
+        $this->assertSame('2026-09-18T11:30:00+08:00', $result['data']['last_completed_sync']);
+        $this->assertSame('freshness', $result['blocks'][0]['type']);
+        $this->assertSame('completed', $result['blocks'][0]['status']);
+        $this->assertSame('UTC+08:00', $result['blocks'][0]['timezone']);
+    }
+
+    public function test_data_freshness_answer_defers_the_timestamp_to_the_verified_card(): void
+    {
+        Http::fakeSequence()
+            ->push(['choices' => [['message' => [
+                'role' => 'assistant',
+                'tool_calls' => [[
+                    'id' => 'call_freshness',
+                    'type' => 'function',
+                    'function' => ['name' => 'data_freshness', 'arguments' => '{}'],
+                ]],
+            ]]]])
+            ->push(['choices' => [['message' => [
+                'role' => 'assistant',
+                'content' => 'The most recent database synchronization was completed on 2026-09-18 at 11:30:00 [data_freshness:latest].',
+            ]]]]);
+
+        $this->authenticated()->postJson(route('assistant.message'), ['message' => 'When was the data last synced?'])
+            ->assertOk()
+            ->assertJsonPath('answer', "The latest synchronization details are shown below.\n\nSources: [data_freshness:latest]")
+            ->assertJsonPath('blocks.0.type', 'freshness')
+            ->assertJsonPath('blocks.0.completed_at', '2026-09-18T11:30:00+08:00');
+    }
+
     public function test_authenticated_request_runs_groq_tool_call_sequence(): void
     {
         Http::fakeSequence()

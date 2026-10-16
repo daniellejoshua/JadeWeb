@@ -34,7 +34,7 @@ export type RevenuePoint = {
 export type PeriodData = {
     label: string;
     stale: boolean;
-    hasUnsynced: boolean;
+    fullyUnsynced: boolean;
     range: string;
     rangeFull: string;
     series: RevenuePoint[];

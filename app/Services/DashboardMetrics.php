@@ -244,7 +244,7 @@ class DashboardMetrics
         return [
             'label' => self::PERIOD_LABELS[$key],
             'stale' => $this->unavailable || ($key === 'today' && ! $lastData->isToday()),
-            'hasUnsynced' => $this->unavailable || in_array(false, array_column($series, 'synced'), true),
+            'fullyUnsynced' => $this->unavailable || ($series !== [] && ! in_array(true, array_column($series, 'synced'), true)),
             'range' => $key === 'today'
                 ? 'As of '.$lastData->format('M j')
                 : ($start->isSameDay($end)

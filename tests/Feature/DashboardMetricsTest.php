@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class DashboardMetricsTest extends TestCase
@@ -101,5 +102,24 @@ class DashboardMetricsTest extends TestCase
         $this->assertSame('Beta', $metrics->topProductsUnCached(1)[0]['product_name']);
         $this->assertTrue(Cache::has('dashboard.top_products.1.1'));
         $this->assertTrue(Cache::has('dashboard.top_products.1.2'));
+    }
+
+    public function test_kpis_are_not_marked_unsynced_when_part_of_the_period_is_synced(): void
+    {
+        $method = new ReflectionMethod(DashboardMetrics::class, 'period');
+        $method->setAccessible(true);
+        $metrics = app(DashboardMetrics::class);
+        $now = Carbon::now();
+        $lastSync = Carbon::parse('2026-09-18 12:00:00');
+        $daily = [
+            '2026-09-10' => ['day' => '2026-09-10', 'revenue' => 200.0, 'orders' => 2],
+        ];
+
+        $lastSeven = $method->invoke($metrics, 'last7', $daily, [], ['revenue' => [], 'profit' => []], $now, $lastSync, $lastSync);
+        $lastThirty = $method->invoke($metrics, 'last30', $daily, [], ['revenue' => [], 'profit' => []], $now, $lastSync, $lastSync);
+
+        $this->assertTrue($lastSeven['fullyUnsynced']);
+        $this->assertFalse($lastThirty['fullyUnsynced']);
+        $this->assertSame(200.0, $lastThirty['revenue']);
     }
 }

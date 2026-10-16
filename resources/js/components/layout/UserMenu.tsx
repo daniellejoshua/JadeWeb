@@ -17,6 +17,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { initials } from '@/lib/format';
+import { clearAllAssistantMemory } from '@/lib/assistant-memory';
 import { Link, usePage } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
 import { useState } from 'react';
@@ -98,7 +99,7 @@ function UserMenu() {
                             className="bg-destructive text-white hover:bg-destructive/90"
                             asChild
                         >
-                            <Link href={route('logout')} method="post" as="button">
+                            <Link href={route('logout')} method="post" as="button" onClick={clearAllAssistantMemory}>
                                 Log out
                             </Link>
                         </Button>

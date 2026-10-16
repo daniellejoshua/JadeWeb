@@ -8,6 +8,8 @@ import {
     type ChartConfig,
 } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
+import { assistantMemoryKey, clearAssistantMemory } from '@/lib/assistant-memory';
+import JadeAvatar, { type JadeRobotState } from '@/components/assistant/JadeAvatar';
 import {
     AlertTriangle,
     ArrowRight,
@@ -15,6 +17,7 @@ import {
     BarChart3,
     Package,
     RefreshCw,
+    RefreshCcw,
     ShieldCheck,
     Sparkles,
     Square,
@@ -38,6 +41,7 @@ import {
 } from 'recharts';
 import remarkGfm from 'remark-gfm';
 import { route } from 'ziggy-js';
+import { usePage } from '@inertiajs/react';
 
 type HistoryMessage = {
     role: 'user' | 'assistant';
@@ -69,7 +73,15 @@ type RecommendationsBlock = {
     items: Array<{ title: string; reason: string; action?: string; severity?: string }>;
 };
 
-export type AssistantBlock = KpiGridBlock | ChartBlock | TableBlock | RecommendationsBlock;
+type FreshnessBlock = {
+    type: 'freshness';
+    title: string;
+    completedAt: string | null;
+    timezone: string;
+    status: 'completed' | 'unavailable';
+};
+
+export type AssistantBlock = KpiGridBlock | ChartBlock | TableBlock | RecommendationsBlock | FreshnessBlock;
 
 export type AssistantResponse = {
     answer: string;
@@ -88,9 +100,10 @@ type ChatMessage = HistoryMessage & {
 type AiAssistantChatProps = {
     embedded?: boolean;
     fill?: boolean;
+    onRobotStateChange?: (state: JadeRobotState) => void;
+    resetToken?: number;
 };
 
-const JADE_IMAGE = '/jadeAssistantAnimation/JadeAIAssistant.png';
 
 const INSIGHT_GROUPS: Array<{
     title: string;
@@ -146,6 +159,41 @@ function formatTableValue(value: string | number | null, key: string): string {
         return `₱${numberFormatter.format(value)}`;
     }
     return numberFormatter.format(value);
+}
+
+function formatSyncDate(value: string): string {
+    return new Intl.DateTimeFormat('en-PH', {
+        dateStyle: 'long',
+        timeZone: 'Asia/Manila',
+    }).format(new Date(value));
+}
+
+function formatSyncTime(value: string): string {
+    return new Intl.DateTimeFormat('en-PH', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila',
+    }).format(new Date(value));
+}
+
+function citationLabel(citation: AssistantResponse['citations'][number]): string {
+    const value = citation.label || citation.tool || citation.id.split(':')[0];
+    return value.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function displayAnswer(answer: string, citations: AssistantResponse['citations']): string {
+    let result = answer;
+    citations.forEach((citation) => {
+        const escaped = citation.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        result = result.replace(new RegExp(`\\[\\s*${escaped}\\s*\\]`, 'g'), '');
+    });
+
+    return result
+        .replace(/^Sources:\s*$/gim, '')
+        .replace(/\s+([.,!?;:])/g, '$1')
+        .trim();
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -220,6 +268,22 @@ function parseBlock(value: unknown): AssistantBlock | null {
         return items.length ? { type: 'recommendations', items } : null;
     }
 
+    if (
+        value.type === 'freshness' &&
+        isString(value.title) &&
+        (value.completed_at === null || typeof value.completed_at === 'string') &&
+        isString(value.timezone) &&
+        (value.status === 'completed' || value.status === 'unavailable')
+    ) {
+        return {
+            type: 'freshness',
+            title: value.title,
+            completedAt: value.completed_at,
+            timezone: value.timezone,
+            status: value.status,
+        };
+    }
+
     return null;
 }
 
@@ -249,6 +313,47 @@ function parseResponse(value: unknown): AssistantResponse {
         asOf: typeof value.asOf === 'string' ? value.asOf : null,
         warnings: Array.isArray(value.warnings) ? value.warnings.filter(isString) : [],
     };
+}
+
+function restoreMessages(storageKey: string): ChatMessage[] {
+    try {
+        const stored: unknown = JSON.parse(window.sessionStorage.getItem(storageKey) ?? 'null');
+        if (!isRecord(stored) || stored.version !== 1 || !Array.isArray(stored.messages)) return [];
+
+        return stored.messages.flatMap((value): ChatMessage[] => {
+            if (
+                !isRecord(value) ||
+                !isString(value.id) ||
+                (value.role !== 'user' && value.role !== 'assistant') ||
+                typeof value.content !== 'string'
+            ) return [];
+
+            if (value.role === 'assistant' && value.response !== undefined) {
+                try {
+                    return [{ id: value.id, role: value.role, content: value.content, response: parseResponse(value.response) }];
+                } catch {
+                    return [];
+                }
+            }
+
+            return [{ id: value.id, role: value.role, content: value.content }];
+        }).slice(-50);
+    } catch {
+        return [];
+    }
+}
+
+function persistMessages(storageKey: string, messages: ChatMessage[]): void {
+    try {
+        if (messages.length === 0) {
+            window.sessionStorage.removeItem(storageKey);
+            return;
+        }
+
+        window.sessionStorage.setItem(storageKey, JSON.stringify({ version: 1, messages: messages.slice(-50) }));
+    } catch {
+        // Conversation memory is optional when storage is full or unavailable.
+    }
 }
 
 function csrfHeaders(): Record<string, string> {
@@ -309,15 +414,11 @@ function WelcomeExperience({
                         ? 'grid-cols-[5rem_minmax(0,1fr)] gap-4'
                         : 'grid-cols-1 md:grid-cols-[13rem_minmax(0,1fr)] md:gap-8',
                 )}>
-                    <div className={cn(
-                        'relative mx-auto aspect-square overflow-hidden rounded-full border border-[#F0D58F] bg-[#FFDF8B] shadow-[0_14px_35px_-22px_rgba(154,113,10,0.6)]',
-                        embedded ? 'w-20' : 'w-36 md:w-52',
-                    )}>
-                        <img
-                            src={JADE_IMAGE}
-                            alt="Jade, the clinic intelligence assistant"
-                            draggable={false}
-                            className="size-full object-contain"
+                    <div className="relative mx-auto flex items-center justify-center">
+                        <JadeAvatar
+                            size={embedded ? 80 : 180}
+                            interactive
+                            label="Jade, the clinic intelligence assistant"
                         />
                     </div>
 
@@ -513,6 +614,41 @@ function AssistantBlockView({ block, embedded }: { block: AssistantBlock; embedd
         );
     }
 
+    if (block.type === 'freshness') {
+        return (
+            <section className="overflow-hidden rounded-2xl border border-[#E8D39D] bg-gradient-to-br from-[#FFFBF2] to-white shadow-[0_12px_32px_-24px_rgba(75,54,8,0.5)] break-inside-avoid">
+                <div className="flex items-center justify-between gap-3 border-b border-[#F0E3C6] px-4 py-3 sm:px-5">
+                    <div className="flex items-center gap-2.5">
+                        <span className="flex size-9 items-center justify-center rounded-xl bg-[#FFF0C2] text-[#9A7000]"><RefreshCcw className="size-4" /></span>
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#A97800]">Data freshness</p>
+                            <h3 className="text-sm font-semibold">{block.title}</h3>
+                        </div>
+                    </div>
+                    <span className={cn(
+                        'rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide',
+                        block.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700',
+                    )}>
+                        {block.status === 'completed' ? 'Completed' : 'Unavailable'}
+                    </span>
+                </div>
+                <div className="grid gap-4 px-4 py-4 sm:grid-cols-[1fr_auto] sm:items-end sm:px-5">
+                    {block.completedAt ? (
+                        <div>
+                            <p className="text-xl font-semibold tracking-tight text-[#262626] sm:text-2xl">{formatSyncDate(block.completedAt)}</p>
+                            <p className="mt-1 text-sm font-medium tabular-nums text-[#655024]">{formatSyncTime(block.completedAt)}</p>
+                        </div>
+                    ) : (
+                        <p className="text-sm text-[#737373]">No completed synchronization record was found.</p>
+                    )}
+                    <div className="rounded-lg bg-[#FFF5DE] px-3 py-2 text-xs font-medium text-[#795B0B]">
+                        {block.timezone} · Asia/Manila
+                    </div>
+                </div>
+            </section>
+        );
+    }
+
     if (block.type === 'table') {
         return (
             <section className="min-w-0 overflow-hidden rounded-2xl border border-[#F0E3C6] bg-white shadow-[0_8px_24px_-22px_rgba(75,54,8,0.45)] break-inside-avoid">
@@ -606,17 +742,31 @@ function AssistantReport({ response, embedded }: { response: AssistantResponse; 
     );
 }
 
-function AssistantMessage({ message, embedded }: { message: ChatMessage; embedded: boolean }) {
+function AssistantMessage({
+    message,
+    embedded,
+    robotState,
+    animateAvatar,
+}: {
+    message: ChatMessage;
+    embedded: boolean;
+    robotState: JadeRobotState;
+    animateAvatar: boolean;
+}) {
     const response = message.response;
 
     return (
         <div className="grid min-w-0 grid-cols-[2rem_minmax(0,1fr)] items-start gap-2 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200 sm:grid-cols-[2.25rem_minmax(0,1fr)] sm:gap-3">
-            <div className="mt-0.5 size-8 overflow-hidden rounded-full border border-[#F0D58F] bg-[#FFF5DE] print:hidden">
-                <img src={JADE_IMAGE} alt="Jade" draggable={false} className="size-full object-cover" />
-            </div>
+            <JadeAvatar
+                size={32}
+                state={animateAvatar ? robotState : 'idle'}
+                paused={!animateAvatar}
+                className="mt-0.5"
+                label={animateAvatar ? `Jade, ${robotState}` : 'Jade'}
+            />
             <div className="min-w-0 space-y-4">
                 <div className="typeset-docs w-fit max-w-[94%] rounded-2xl rounded-tl-md border border-[#F0E3C6] bg-[#FFFBF2] px-4 py-3 text-[#262626] [--typeset-size:14px] sm:px-5 sm:py-3.5">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayAnswer(message.content, response?.citations ?? [])}</ReactMarkdown>
                 </div>
                 {response && <AssistantReport response={response} embedded={embedded} />}
                 {response && response.warnings.length > 0 && (
@@ -631,10 +781,10 @@ function AssistantMessage({ message, embedded }: { message: ChatMessage; embedde
                 )}
                 {response && (response.citations.length > 0 || response.asOf) && (
                     <div className="flex flex-wrap items-center gap-2 border-t border-[#F0E3C6] pt-3 text-[11px] text-[#737373]">
-                        {response.asOf && <span>Last synced {response.asOf}</span>}
+                        {response.asOf && <span>Last synced {formatSyncDate(response.asOf)} at {formatSyncTime(response.asOf)}</span>}
                         {response.citations.map((citation) => (
                             <span key={citation.id} title={[citation.tool, citation.as_of].filter(Boolean).join(' · ')} className="rounded-full border border-[#F0E3C6] bg-[#FFFBF2] px-2.5 py-1 font-medium">
-                                {citation.label || citation.id}
+                                {citationLabel(citation)}
                             </span>
                         ))}
                     </div>
@@ -644,8 +794,10 @@ function AssistantMessage({ message, embedded }: { message: ChatMessage; embedde
     );
 }
 
-function AiAssistantChat({ embedded = false, fill = false }: AiAssistantChatProps) {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+function AiAssistantChat({ embedded = false, fill = false, onRobotStateChange, resetToken = 0 }: AiAssistantChatProps) {
+    const userId = usePage().props.auth.user?.id;
+    const storageKey = userId ? assistantMemoryKey(userId) : null;
+    const [messages, setMessages] = useState<ChatMessage[]>(() => storageKey ? restoreMessages(storageKey) : []);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -653,9 +805,41 @@ function AiAssistantChat({ embedded = false, fill = false }: AiAssistantChatProp
     const scrollRef = useRef<HTMLDivElement>(null);
     const composerRef = useRef<HTMLTextAreaElement>(null);
     const controllerRef = useRef<AbortController | null>(null);
+    const robotTimerRef = useRef<number | null>(null);
+    const initialScrollRef = useRef(true);
+    const previousResetTokenRef = useRef(resetToken);
+    const [robotState, setRobotState] = useState<JadeRobotState>('idle');
 
-    useEffect(() => () => controllerRef.current?.abort(), []);
+    useEffect(() => () => {
+        controllerRef.current?.abort();
+        if (robotTimerRef.current !== null) window.clearTimeout(robotTimerRef.current);
+    }, []);
+    useEffect(() => onRobotStateChange?.(robotState), [onRobotStateChange, robotState]);
+    useEffect(() => () => onRobotStateChange?.('idle'), [onRobotStateChange]);
     useEffect(() => {
+        if (storageKey) persistMessages(storageKey, messages);
+    }, [messages, storageKey]);
+    useEffect(() => {
+        if (previousResetTokenRef.current === resetToken) return;
+        previousResetTokenRef.current = resetToken;
+        controllerRef.current?.abort();
+        if (robotTimerRef.current !== null) window.clearTimeout(robotTimerRef.current);
+        if (userId) clearAssistantMemory(userId);
+        setMessages([]);
+        setInput('');
+        setError(null);
+        setFailedRequest(null);
+        setIsLoading(false);
+        setRobotState('idle');
+        scrollRef.current?.scrollTo({ top: 0 });
+    }, [resetToken, userId]);
+    useEffect(() => {
+        if (initialScrollRef.current) {
+            initialScrollRef.current = false;
+            scrollRef.current?.scrollTo({ top: 0 });
+            return;
+        }
+
         scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     }, [messages, isLoading, error]);
     useEffect(() => {
@@ -674,6 +858,8 @@ function AiAssistantChat({ embedded = false, fill = false }: AiAssistantChatProp
         setError(null);
         setFailedRequest(null);
         setIsLoading(true);
+        if (robotTimerRef.current !== null) window.clearTimeout(robotTimerRef.current);
+        setRobotState('thinking');
         const controller = new AbortController();
         controllerRef.current = controller;
 
@@ -692,13 +878,22 @@ function AiAssistantChat({ embedded = false, fill = false }: AiAssistantChatProp
                     history: history.slice(-12).map(({ role, content }) => ({ role, content })),
                 }),
             });
-            if (!response.ok) throw new Error(await errorMessage(response));
+            if (!response.ok) {
+                if (userId && [401, 403, 419].includes(response.status)) clearAssistantMemory(userId);
+                throw new Error(await errorMessage(response));
+            }
             const assistantResponse = parseResponse(await response.json());
             setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'assistant', content: assistantResponse.answer, response: assistantResponse }]);
+            setRobotState('speaking');
+            robotTimerRef.current = window.setTimeout(() => setRobotState('idle'), 1400);
         } catch (requestError) {
-            if (requestError instanceof DOMException && requestError.name === 'AbortError') return;
+            if (requestError instanceof DOMException && requestError.name === 'AbortError') {
+                setRobotState('idle');
+                return;
+            }
             setError(requestError instanceof Error ? requestError.message : 'Jade could not complete the request. Please try again.');
             setFailedRequest({ prompt: text, history });
+            setRobotState('error');
         } finally {
             if (controllerRef.current === controller) {
                 controllerRef.current = null;
@@ -718,6 +913,7 @@ function AiAssistantChat({ embedded = false, fill = false }: AiAssistantChatProp
         }
     };
     const latestResponse = [...messages].reverse().find((message) => message.response)?.response;
+    const latestAssistantId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
     const suggestions = latestResponse?.suggestions ?? [];
 
     return (
@@ -731,17 +927,25 @@ function AiAssistantChat({ embedded = false, fill = false }: AiAssistantChatProp
                     <div key={message.id} className="flex justify-end break-inside-avoid motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200">
                         <div className="max-w-[85%] rounded-2xl rounded-br-md border border-[#EBCF86] bg-[#FFF5DE] px-4 py-3 text-sm font-medium leading-6 text-[#493706] shadow-[0_7px_18px_-16px_rgba(90,64,0,0.65)]">{message.content}</div>
                     </div>
-                ) : <AssistantMessage key={message.id} message={message} embedded={embedded} />)}
+                ) : (
+                    <AssistantMessage
+                        key={message.id}
+                        message={message}
+                        embedded={embedded}
+                        robotState={robotState}
+                        animateAvatar={message.id === latestAssistantId && !isLoading && !error}
+                    />
+                ))}
                 {isLoading && (
                     <div className="flex items-center gap-2.5 rounded-xl border border-[#F0E3C6] bg-[#FFFBF2] px-3 py-2.5 text-sm text-[#737373] shadow-sm print:hidden">
-                        <span className="size-4 animate-spin rounded-full border-2 border-[#E8D7B2] border-t-[#C49A2C] motion-reduce:animate-none" />
+                        <JadeAvatar size={32} state="thinking" label="Jade is thinking" />
                         Analyzing your data and checking available tools…
                     </div>
                 )}
                 {error && (
-                    <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
-                        <p>{error}</p>
-                        {failedRequest && <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => void sendMessage(failedRequest.prompt, failedRequest.history, false)}><RefreshCw className="size-3.5" />Retry</Button>}
+                    <div role="alert" className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                        <JadeAvatar size={32} state="error" label="Jade encountered an error" />
+                        <div><p>{error}</p>{failedRequest && <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => void sendMessage(failedRequest.prompt, failedRequest.history, false)}><RefreshCw className="size-3.5" />Retry</Button>}</div>
                     </div>
                 )}
                 {messages.length > 0 && suggestions.length > 0 && !isLoading && (
